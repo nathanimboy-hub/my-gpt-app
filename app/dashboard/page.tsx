@@ -138,6 +138,35 @@ export default function DashboardPage() {
     };
   }, [filteredLogs]);
 
+  const summaryInsights = useMemo(() => {
+    const totalTrips = filteredLogs.length;
+    const totalPassengers = filteredLogs.reduce((sum, log) => sum + Number(log.passenger_count), 0);
+    const totalFuelUsed = filteredLogs.reduce((sum, log) => sum + Number(log.total_fuel_liters), 0);
+
+    const lowestPassengerTrip = filteredLogs.reduce<TripLog | null>((lowest, current) => {
+      if (!lowest) {
+        return current;
+      }
+      return Number(current.passenger_count) < Number(lowest.passenger_count) ? current : lowest;
+    }, null);
+
+    const highestFuelUsageTrip = filteredLogs.reduce<TripLog | null>((highest, current) => {
+      if (!highest) {
+        return current;
+      }
+      return Number(current.total_fuel_liters) > Number(highest.total_fuel_liters) ? current : highest;
+    }, null);
+
+    return {
+      totalTrips,
+      totalPassengers,
+      averagePassengersPerTrip: totalTrips ? totalPassengers / totalTrips : 0,
+      averageFuelUsedPerTrip: totalTrips ? totalFuelUsed / totalTrips : 0,
+      lowestPassengerTrip,
+      highestFuelUsageTrip
+    };
+  }, [filteredLogs]);
+
   const formatTripLabel = (trip: TripLog | null) => {
     if (!trip) {
       return "No trips in current filter";
@@ -145,6 +174,17 @@ export default function DashboardPage() {
 
     const tripDate = new Date(trip.scheduled_departure_time).toLocaleDateString();
     return `${trip.vessel_name} • ${trip.route_direction} • ${tripDate}`;
+  };
+
+  const formatTripTime = (trip: TripLog | null) => {
+    if (!trip) {
+      return "No data available";
+    }
+
+    return new Date(trip.scheduled_departure_time).toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit"
+    });
   };
 
   const clearFilters = () => {
@@ -273,6 +313,51 @@ export default function DashboardPage() {
 
       {activeTab === "admin" && isAdmin ? (
         <>
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+            <h2 className="text-lg font-semibold">Summary Insights</h2>
+            <p className="mb-4 text-sm text-slate-500">Quick operational highlights from the current filtered trip logs.</p>
+            {summaryInsights.totalTrips === 0 ? (
+              <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+                No data available
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="rounded-xl border border-slate-200 p-4">
+                  <p className="text-sm text-slate-500">Total Trips Logged</p>
+                  <p className="text-xl font-semibold text-slate-900">{summaryInsights.totalTrips.toLocaleString()}</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 p-4">
+                  <p className="text-sm text-slate-500">Total Passengers</p>
+                  <p className="text-xl font-semibold text-slate-900">{summaryInsights.totalPassengers.toLocaleString()}</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 p-4">
+                  <p className="text-sm text-slate-500">Average Passengers per Trip</p>
+                  <p className="text-xl font-semibold text-slate-900">{summaryInsights.averagePassengersPerTrip.toFixed(2)}</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 p-4">
+                  <p className="text-sm text-slate-500">Average Fuel Used per Trip</p>
+                  <p className="text-xl font-semibold text-slate-900">{summaryInsights.averageFuelUsedPerTrip.toFixed(2)} L</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 p-4">
+                  <p className="text-sm text-slate-500">Lowest Passenger Trip</p>
+                  <p className="text-base font-semibold text-slate-900">
+                    {`${formatTripTime(summaryInsights.lowestPassengerTrip)} – ${summaryInsights.lowestPassengerTrip?.passenger_count ?? 0} passengers`}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-slate-200 p-4">
+                  <p className="text-sm text-slate-500">Highest Fuel Usage Trip</p>
+                  <p className="text-base font-semibold text-slate-900">
+                    {`${formatTripTime(summaryInsights.highestFuelUsageTrip)} – ${
+                      summaryInsights.highestFuelUsageTrip
+                        ? `${Number(summaryInsights.highestFuelUsageTrip.total_fuel_liters).toFixed(2)} L`
+                        : "No data available"
+                    }`}
+                  </p>
+                </div>
+              </div>
+            )}
+          </section>
+
           <section>
             <div className="mb-3">
               <h2 className="text-lg font-semibold text-slate-900">Admin Overview</h2>

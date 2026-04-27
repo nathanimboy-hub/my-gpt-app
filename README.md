@@ -4,6 +4,7 @@ Simple mobile-friendly trip logging app built with **Next.js + TypeScript + Tail
 
 ## Features
 - Login page using Supabase Auth
+- Role-aware dashboard (employees can log operational data; admins can view financial metrics)
 - Dashboard KPIs for trips, passengers, revenue, and fuel efficiency
 - Add Trip Log form with validation (Zod + React Hook Form)
 - Auto-calculation display for total fuel and trip duration
@@ -25,3 +26,5 @@ Simple mobile-friendly trip logging app built with **Next.js + TypeScript + Tail
 ## Notes
 - Database computes `total_fuel_liters` and `trip_duration_minutes` as generated columns.
 - Client also shows these values in real time while crew fills the form.
+
+- Auth trigger sets new users to role `employee` by default; assign `admin` manually via Supabase metadata when needed.

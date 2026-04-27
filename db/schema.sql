@@ -38,3 +38,29 @@ create policy "users can insert own trip logs"
   on public.trip_logs
   for insert
   with check (auth.uid() = created_by);
+
+-- Ensure new users always get the employee role by default.
+create or replace function public.set_default_user_role()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.raw_user_meta_data is null then
+    new.raw_user_meta_data := '{}'::jsonb;
+  end if;
+
+  if coalesce(new.raw_user_meta_data ->> 'role', '') = '' then
+    new.raw_user_meta_data := jsonb_set(new.raw_user_meta_data, '{role}', '"employee"'::jsonb, true);
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created_set_default_role on auth.users;
+create trigger on_auth_user_created_set_default_role
+before insert on auth.users
+for each row
+execute function public.set_default_user_role();

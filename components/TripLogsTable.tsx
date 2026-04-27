@@ -19,26 +19,27 @@ export function TripLogsTable({
   onDelete
 }: TripLogsTableProps) {
   return (
-    <section className="overflow-hidden rounded-xl bg-white shadow-sm">
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
         <table className="min-w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
             <tr>
-              <th className="px-3 py-2">Date</th>
-              <th className="px-3 py-2">Vessel</th>
-              <th className="px-3 py-2">Route</th>
-              <th className="px-3 py-2">Passengers</th>
-              {showFinancials && <th className="px-3 py-2">Sales</th>}
-              <th className="px-3 py-2">Fuel (L)</th>
-              <th className="px-3 py-2">Duration</th>
-              <th className="px-3 py-2">Actions</th>
+              <th className="whitespace-nowrap px-4 py-3">Date</th>
+              <th className="whitespace-nowrap px-4 py-3">Vessel</th>
+              <th className="whitespace-nowrap px-4 py-3">Route</th>
+              <th className="whitespace-nowrap px-4 py-3">Passengers</th>
+              {showFinancials && <th className="whitespace-nowrap px-4 py-3">Sales</th>}
+              <th className="whitespace-nowrap px-4 py-3">Fuel (L)</th>
+              <th className="whitespace-nowrap px-4 py-3">Duration</th>
+              <th className="whitespace-nowrap px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {logs.length === 0 ? (
               <tr>
-                <td colSpan={showFinancials ? 8 : 7} className="px-3 py-6 text-center text-slate-500">
-                  No trip logs yet.
+                <td colSpan={showFinancials ? 8 : 7} className="px-4 py-14 text-center">
+                  <p className="font-medium text-slate-700">No trip logs found</p>
+                  <p className="mt-1 text-sm text-slate-500">Adjust filters or add a new trip log to get started.</p>
                 </td>
               </tr>
             ) : (
@@ -46,21 +47,23 @@ export function TripLogsTable({
                 const canManage = userRole === "admin" || log.created_by === currentUserId;
 
                 return (
-                  <tr key={log.id} className="border-t border-slate-100">
-                    <td className="px-3 py-2">{format(new Date(log.scheduled_departure_time), "MMM d, h:mm a")}</td>
-                    <td className="px-3 py-2">{log.vessel_name}</td>
-                    <td className="px-3 py-2">{log.route_direction}</td>
-                    <td className="px-3 py-2">{log.passenger_count}</td>
-                    {showFinancials && <td className="px-3 py-2">₱{log.ticket_sales_php.toLocaleString()}</td>}
-                    <td className="px-3 py-2">{log.total_fuel_liters.toFixed(2)}</td>
-                    <td className="px-3 py-2">{log.trip_duration_minutes} min</td>
-                    <td className="px-3 py-2">
+                  <tr key={log.id} className="border-t border-slate-100 hover:bg-slate-50/80">
+                    <td className="whitespace-nowrap px-4 py-3">
+                      {format(new Date(log.scheduled_departure_time), "MMM d, yyyy • h:mm a")}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-800">{log.vessel_name}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-slate-700">{log.route_direction}</td>
+                    <td className="whitespace-nowrap px-4 py-3">{log.passenger_count.toLocaleString()}</td>
+                    {showFinancials && <td className="whitespace-nowrap px-4 py-3">₱{log.ticket_sales_php.toLocaleString()}</td>}
+                    <td className="whitespace-nowrap px-4 py-3">{log.total_fuel_liters.toFixed(2)}</td>
+                    <td className="whitespace-nowrap px-4 py-3">{log.trip_duration_minutes} min</td>
+                    <td className="px-4 py-3">
                       {canManage ? (
-                        <div className="flex gap-2">
+                        <div className="flex justify-end gap-2">
                           <button
                             type="button"
                             onClick={() => onEdit(log)}
-                            className="bg-slate-200 text-slate-700 hover:bg-slate-300"
+                            className="border border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
                           >
                             Edit
                           </button>
@@ -73,7 +76,7 @@ export function TripLogsTable({
                           </button>
                         </div>
                       ) : (
-                        <span className="text-xs text-slate-400">No access</span>
+                        <p className="text-right text-xs text-slate-400">No access</p>
                       )}
                     </td>
                   </tr>

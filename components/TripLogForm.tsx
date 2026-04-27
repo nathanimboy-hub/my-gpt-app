@@ -150,108 +150,122 @@ export function TripLogForm({
   const isEditing = Boolean(editingLog);
 
   return (
-    <section className="rounded-xl bg-white p-4 shadow-sm">
-      <h2 className="text-lg font-semibold">{isEditing ? "Edit Trip Log" : "Add Trip Log"}</h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div>
-          <label>Vessel Name</label>
-          <select {...register("vessel_name")}>
-            <option>Lite Cat 1</option>
-            <option>Lite Cat 2</option>
-          </select>
-        </div>
-        <div>
-          <label>Route Direction</label>
-          <select {...register("route_direction")}>
-            <option>Cebu to Tubigon</option>
-            <option>Tubigon to Cebu</option>
-          </select>
-        </div>
-        <div>
-          <label>Scheduled Departure</label>
-          <input type="datetime-local" required {...register("scheduled_departure_time")} />
-          {errors.scheduled_departure_time && (
-            <p className="text-xs text-red-600">{errors.scheduled_departure_time.message}</p>
-          )}
-        </div>
-        <div>
-          <label>Actual Departure</label>
-          <input type="datetime-local" required {...register("actual_departure_time")} />
-          {errors.actual_departure_time && (
-            <p className="text-xs text-red-600">{errors.actual_departure_time.message}</p>
-          )}
-        </div>
-        <div>
-          <label>Actual Arrival</label>
-          <input type="datetime-local" required {...register("actual_arrival_time")} />
-          {errors.actual_arrival_time && (
-            <p className="text-xs text-red-600">{errors.actual_arrival_time.message}</p>
-          )}
-        </div>
-        <div>
-          <label>Passenger Count</label>
-          <input type="number" min={0} required {...register("passenger_count")} />
-          {errors.passenger_count && <p className="text-xs text-red-600">{errors.passenger_count.message}</p>}
-        </div>
-        {showFinancialFields && (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+      <div className="flex flex-col gap-1 border-b border-slate-100 pb-4">
+        <h2 className="text-lg font-semibold text-slate-900">{isEditing ? "Edit Trip Log" : "Add Trip Log"}</h2>
+        <p className="text-sm text-slate-500">Record trip movement, load, and fuel consumption details.</p>
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-5 space-y-5">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div>
-            <label>Ticket Sales (PHP)</label>
-            <input type="number" min={0} step="0.01" {...register("ticket_sales_php")} />
+            <label>Vessel Name</label>
+            <select {...register("vessel_name")}>
+              <option>Lite Cat 1</option>
+              <option>Lite Cat 2</option>
+            </select>
           </div>
-        )}
-        <div>
-          <label>Cargo Count</label>
-          <input type="number" min={0} {...register("cargo_count")} />
-        </div>
-        <div>
-          <label>Motorcycles</label>
-          <input type="number" min={0} {...register("motorcycles_count")} />
-        </div>
-        <div>
-          <label>Cars</label>
-          <input type="number" min={0} {...register("cars_count")} />
-        </div>
-        <div>
-          <label>Trucks</label>
-          <input type="number" min={0} {...register("trucks_count")} />
-        </div>
-        <div>
-          <label>Main Engine Fuel Steaming (L)</label>
-          <input type="number" min={0} step="0.01" required {...register("fuel_steaming_liters")} />
-          {errors.fuel_steaming_liters && (
-            <p className="text-xs text-red-600">{errors.fuel_steaming_liters.message}</p>
+          <div>
+            <label>Route Direction</label>
+            <select {...register("route_direction")}>
+              <option>Cebu to Tubigon</option>
+              <option>Tubigon to Cebu</option>
+            </select>
+          </div>
+          <div>
+            <label>Passenger Count</label>
+            <input type="number" min={0} required {...register("passenger_count")} />
+            {errors.passenger_count && <p className="mt-1 text-xs text-red-600">{errors.passenger_count.message}</p>}
+          </div>
+
+          <div>
+            <label>Scheduled Departure</label>
+            <input type="datetime-local" required {...register("scheduled_departure_time")} />
+            {errors.scheduled_departure_time && (
+              <p className="mt-1 text-xs text-red-600">{errors.scheduled_departure_time.message}</p>
+            )}
+          </div>
+          <div>
+            <label>Actual Departure</label>
+            <input type="datetime-local" required {...register("actual_departure_time")} />
+            {errors.actual_departure_time && <p className="mt-1 text-xs text-red-600">{errors.actual_departure_time.message}</p>}
+          </div>
+          <div>
+            <label>Actual Arrival</label>
+            <input type="datetime-local" required {...register("actual_arrival_time")} />
+            {errors.actual_arrival_time && <p className="mt-1 text-xs text-red-600">{errors.actual_arrival_time.message}</p>}
+          </div>
+
+          {showFinancialFields && (
+            <div>
+              <label>Ticket Sales (PHP)</label>
+              <input type="number" min={0} step="0.01" {...register("ticket_sales_php")} />
+            </div>
           )}
+          <div>
+            <label>Cargo Count</label>
+            <input type="number" min={0} {...register("cargo_count")} />
+          </div>
+          <div>
+            <label>Motorcycles</label>
+            <input type="number" min={0} {...register("motorcycles_count")} />
+          </div>
+          <div>
+            <label>Cars</label>
+            <input type="number" min={0} {...register("cars_count")} />
+          </div>
+          <div>
+            <label>Trucks</label>
+            <input type="number" min={0} {...register("trucks_count")} />
+          </div>
+          <div>
+            <label>Main Engine Fuel Steaming (L)</label>
+            <input type="number" min={0} step="0.01" required {...register("fuel_steaming_liters")} />
+            {errors.fuel_steaming_liters && <p className="mt-1 text-xs text-red-600">{errors.fuel_steaming_liters.message}</p>}
+          </div>
+          <div>
+            <label>Main Engine Fuel Maneuvering (L)</label>
+            <input type="number" min={0} step="0.01" required {...register("fuel_maneuvering_liters")} />
+            {errors.fuel_maneuvering_liters && (
+              <p className="mt-1 text-xs text-red-600">{errors.fuel_maneuvering_liters.message}</p>
+            )}
+          </div>
+          <div>
+            <label>Auxiliary Engine Fuel (L)</label>
+            <input type="number" min={0} step="0.01" required {...register("generator_fuel_liters")} />
+            {errors.generator_fuel_liters && (
+              <p className="mt-1 text-xs text-red-600">{errors.generator_fuel_liters.message}</p>
+            )}
+          </div>
         </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
+            <p className="text-xs uppercase tracking-wide text-blue-700">Total Fuel (auto)</p>
+            <p className="mt-1 text-2xl font-semibold text-blue-900">{totalFuelLiters.toFixed(2)} L</p>
+          </div>
+          <div className="rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3">
+            <p className="text-xs uppercase tracking-wide text-indigo-700">Trip Duration (auto)</p>
+            <p className="mt-1 text-2xl font-semibold text-indigo-900">{tripDurationMinutes} min</p>
+          </div>
+        </div>
+
         <div>
-          <label>Main Engine Fuel Maneuvering (L)</label>
-          <input type="number" min={0} step="0.01" required {...register("fuel_maneuvering_liters")} />
-          {errors.fuel_maneuvering_liters && (
-            <p className="text-xs text-red-600">{errors.fuel_maneuvering_liters.message}</p>
-          )}
-        </div>
-        <div>
-          <label>Auxiliary Engine Fuel (L)</label>
-          <input type="number" min={0} step="0.01" required {...register("generator_fuel_liters")} />
-          {errors.generator_fuel_liters && (
-            <p className="text-xs text-red-600">{errors.generator_fuel_liters.message}</p>
-          )}
-        </div>
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
-          <p className="text-xs text-slate-600">Total Fuel (auto)</p>
-          <p className="text-lg font-semibold">{totalFuelLiters.toFixed(2)} L</p>
-        </div>
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
-          <p className="text-xs text-slate-600">Trip Duration (auto)</p>
-          <p className="text-lg font-semibold">{tripDurationMinutes} min</p>
-        </div>
-        <div className="sm:col-span-2">
           <label>Notes</label>
-          <textarea rows={3} {...register("notes")} />
+          <textarea rows={4} placeholder="Additional observations, delays, or incidents..." {...register("notes")} />
         </div>
-        {submitError && <p className="sm:col-span-2 text-sm text-red-600">{submitError}</p>}
-        <button type="submit" disabled={saving} className="sm:col-span-2 bg-blue-600 text-white">
-          {saving ? "Saving..." : isEditing ? "Update Trip Log" : "Save Trip Log"}
-        </button>
+
+        {submitError && <p className="text-sm font-medium text-red-600">{submitError}</p>}
+
+        <div className="flex flex-wrap justify-end gap-3 border-t border-slate-100 pt-4">
+          <button
+            type="submit"
+            disabled={saving}
+            className="w-full bg-blue-600 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300 sm:w-auto"
+          >
+            {saving ? "Saving..." : isEditing ? "Update Trip Log" : "Save Trip Log"}
+          </button>
+        </div>
       </form>
     </section>
   );

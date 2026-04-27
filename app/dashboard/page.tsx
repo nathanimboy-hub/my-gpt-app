@@ -203,36 +203,52 @@ export default function DashboardPage() {
   };
 
   if (loading) {
-    return <main className="p-4">Loading...</main>;
+    return (
+      <main className="mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center px-4 py-10">
+        <div className="rounded-2xl border border-slate-200 bg-white px-8 py-10 text-center shadow-sm">
+          <div className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-blue-100 border-t-blue-600" />
+          <p className="mt-4 text-sm font-medium text-slate-700">Loading dashboard...</p>
+        </div>
+      </main>
+    );
   }
 
   return (
-    <main className="mx-auto max-w-6xl space-y-4 p-4 pb-12">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Lite Shipping Dashboard</h1>
-          <p className="text-sm text-slate-500">Cebu ↔ Tubigon operations and fuel efficiency</p>
-          <p className="text-xs uppercase tracking-wide text-slate-400">Role: {userRole}</p>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={exportCsv} className="bg-emerald-600 text-white">
-            Export CSV
-          </button>
-          <button onClick={logout} className="bg-slate-700 text-white">
-            Logout
-          </button>
+    <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 pb-10 lg:px-6">
+      <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">Lite Shipping</p>
+            <h1 className="mt-1 text-2xl font-bold text-slate-900 md:text-3xl">Trip Operations Dashboard</h1>
+            <p className="mt-1 text-sm text-slate-500">Cebu ↔ Tubigon schedules, logs, and operational analytics.</p>
+            <p className="mt-2 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+              Role: {userRole}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={exportCsv} className="border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">
+              Export CSV
+            </button>
+            <button onClick={logout} className="bg-slate-800 text-white hover:bg-slate-900">
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 
-      <section className="rounded-xl bg-white p-2 shadow-sm">
-        <div className="flex gap-2">
+      <section className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+        <nav className="grid grid-cols-1 gap-2 sm:grid-cols-2" aria-label="Dashboard Tabs">
           <button
             type="button"
             onClick={() => {
               setActiveTab("employee");
               setEditingLog(null);
             }}
-            className={activeTab === "employee" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}
+            className={`w-full ${
+              activeTab === "employee"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+            }`}
           >
             Employee Tab
           </button>
@@ -243,61 +259,72 @@ export default function DashboardPage() {
                 setActiveTab("admin");
                 setEditingLog(null);
               }}
-              className={activeTab === "admin" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}
+              className={`w-full ${
+                activeTab === "admin"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
             >
               Admin Tab
             </button>
           )}
-        </div>
+        </nav>
       </section>
 
       {activeTab === "admin" && isAdmin ? (
         <>
-          <section className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
-            <KpiCard label="Total Trips" value={metrics.totalTrips.toString()} />
-            <KpiCard label="Total Passengers" value={metrics.totalPassengers.toLocaleString()} />
-            <KpiCard label="Total Ticket Sales" value={`₱${metrics.totalTicketSales.toLocaleString()}`} />
-            <KpiCard label="Total Fuel Used" value={`${metrics.totalFuelUsed.toFixed(2)} L`} />
-            <KpiCard label="Avg Fuel / Trip" value={`${metrics.averageFuelPerTrip.toFixed(2)} L`} />
-            <KpiCard label="Fuel / Passenger" value={`${metrics.fuelPerPassengerRatio.toFixed(3)} L`} />
-            <KpiCard label="Fuel / Vehicle" value={`${metrics.fuelPerVehicleRatio.toFixed(3)} L`} />
+          <section>
+            <div className="mb-3">
+              <h2 className="text-lg font-semibold text-slate-900">Admin Overview</h2>
+              <p className="text-sm text-slate-500">Summary metrics and analytics across all filtered trip logs.</p>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+              <KpiCard label="Total Trips" value={metrics.totalTrips.toString()} />
+              <KpiCard label="Total Passengers" value={metrics.totalPassengers.toLocaleString()} />
+              <KpiCard label="Total Ticket Sales" value={`₱${metrics.totalTicketSales.toLocaleString()}`} />
+              <KpiCard label="Total Fuel Used" value={`${metrics.totalFuelUsed.toFixed(2)} L`} />
+              <KpiCard label="Avg Fuel / Trip" value={`${metrics.averageFuelPerTrip.toFixed(2)} L`} />
+              <KpiCard label="Fuel / Passenger" value={`${metrics.fuelPerPassengerRatio.toFixed(3)} L`} />
+              <KpiCard label="Fuel / Vehicle" value={`${metrics.fuelPerVehicleRatio.toFixed(3)} L`} />
+            </div>
           </section>
 
-          <section className="rounded-xl bg-white p-4 shadow-sm">
-            <h2 className="mb-3 text-lg font-semibold">Analytics Summary</h2>
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+            <h2 className="text-lg font-semibold">Analytics Summary</h2>
+            <p className="mb-4 text-sm text-slate-500">Financial and fuel-performance indicators for current filters.</p>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-              <div className="rounded-lg border border-slate-200 p-3">
+              <div className="rounded-xl border border-slate-200 p-4">
                 <p className="text-sm text-slate-500">Total Revenue</p>
-                <p className="text-lg font-semibold">₱{analyticsSummary.totalRevenue.toLocaleString()}</p>
+                <p className="text-xl font-semibold text-slate-900">₱{analyticsSummary.totalRevenue.toLocaleString()}</p>
               </div>
-              <div className="rounded-lg border border-slate-200 p-3">
+              <div className="rounded-xl border border-slate-200 p-4">
                 <p className="text-sm text-slate-500">Total Fuel Used</p>
-                <p className="text-lg font-semibold">{analyticsSummary.totalFuelUsed.toFixed(2)} L</p>
+                <p className="text-xl font-semibold text-slate-900">{analyticsSummary.totalFuelUsed.toFixed(2)} L</p>
               </div>
-              <div className="rounded-lg border border-slate-200 p-3">
+              <div className="rounded-xl border border-slate-200 p-4">
                 <p className="text-sm text-slate-500">Average Fuel per Trip</p>
-                <p className="text-lg font-semibold">{analyticsSummary.averageFuelPerTrip.toFixed(2)} L</p>
+                <p className="text-xl font-semibold text-slate-900">{analyticsSummary.averageFuelPerTrip.toFixed(2)} L</p>
               </div>
-              <div className="rounded-lg border border-slate-200 p-3">
+              <div className="rounded-xl border border-slate-200 p-4">
                 <p className="text-sm text-slate-500">Average Revenue per Trip</p>
-                <p className="text-lg font-semibold">₱{analyticsSummary.averageRevenuePerTrip.toLocaleString()}</p>
+                <p className="text-xl font-semibold text-slate-900">₱{analyticsSummary.averageRevenuePerTrip.toLocaleString()}</p>
               </div>
-              <div className="rounded-lg border border-slate-200 p-3">
+              <div className="rounded-xl border border-slate-200 p-4">
                 <p className="text-sm text-slate-500">Fuel per Passenger</p>
-                <p className="text-lg font-semibold">{analyticsSummary.fuelPerPassenger.toFixed(3)} L</p>
+                <p className="text-xl font-semibold text-slate-900">{analyticsSummary.fuelPerPassenger.toFixed(3)} L</p>
               </div>
-              <div className="rounded-lg border border-slate-200 p-3 md:col-span-2 xl:col-span-1">
+              <div className="rounded-xl border border-slate-200 p-4 md:col-span-2 xl:col-span-1">
                 <p className="text-sm text-slate-500">Highest Fuel Usage Trip</p>
-                <p className="font-medium">{formatTripLabel(analyticsSummary.highestFuelTrip)}</p>
+                <p className="font-medium text-slate-900">{formatTripLabel(analyticsSummary.highestFuelTrip)}</p>
                 <p className="text-sm text-slate-500">
                   {analyticsSummary.highestFuelTrip
                     ? `${Number(analyticsSummary.highestFuelTrip.total_fuel_liters).toFixed(2)} L`
                     : "—"}
                 </p>
               </div>
-              <div className="rounded-lg border border-slate-200 p-3 md:col-span-2 xl:col-span-3">
+              <div className="rounded-xl border border-slate-200 p-4 md:col-span-2 xl:col-span-3">
                 <p className="text-sm text-slate-500">Lowest Fuel Usage Trip</p>
-                <p className="font-medium">{formatTripLabel(analyticsSummary.lowestFuelTrip)}</p>
+                <p className="font-medium text-slate-900">{formatTripLabel(analyticsSummary.lowestFuelTrip)}</p>
                 <p className="text-sm text-slate-500">
                   {analyticsSummary.lowestFuelTrip
                     ? `${Number(analyticsSummary.lowestFuelTrip.total_fuel_liters).toFixed(2)} L`
@@ -307,10 +334,14 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          <div>
-            <h2 className="mb-2 text-lg font-semibold">Trip Logs</h2>
-            <section className="mb-3 rounded-xl bg-white p-4 shadow-sm">
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+          <section className="space-y-3">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Trip Logs</h2>
+              <p className="text-sm text-slate-500">Filter and review operational logs across vessels and routes.</p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
                 <div>
                   <label htmlFor="date-from-filter">Date From</label>
                   <input
@@ -322,12 +353,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <label htmlFor="date-to-filter">Date To</label>
-                  <input
-                    id="date-to-filter"
-                    type="date"
-                    value={dateTo}
-                    onChange={(event) => setDateTo(event.target.value)}
-                  />
+                  <input id="date-to-filter" type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
                 </div>
                 <div>
                   <label htmlFor="vessel-filter">Vessel Name</label>
@@ -354,12 +380,17 @@ export default function DashboardPage() {
                   </select>
                 </div>
                 <div className="flex items-end">
-                  <button type="button" onClick={clearFilters} className="w-full bg-slate-200 text-slate-700">
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="w-full border border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  >
                     Clear Filters
                   </button>
                 </div>
               </div>
-            </section>
+            </div>
+
             <TripLogsTable
               logs={filteredLogs}
               showFinancials={true}
@@ -368,20 +399,29 @@ export default function DashboardPage() {
               onEdit={setEditingLog}
               onDelete={handleDelete}
             />
-          </div>
+          </section>
         </>
       ) : (
         <>
-          <TripLogForm
-            userId={userId}
-            editingLog={editingLog}
-            showFinancialFields={true}
-            canManageAllLogs={isAdmin}
-            onSaved={handleSaved}
-          />
+          <section>
+            <div className="mb-3">
+              <h2 className="text-lg font-semibold text-slate-900">Employee Workspace</h2>
+              <p className="text-sm text-slate-500">Create trip entries and manage logs based on your access permissions.</p>
+            </div>
+            <TripLogForm
+              userId={userId}
+              editingLog={editingLog}
+              showFinancialFields={true}
+              canManageAllLogs={isAdmin}
+              onSaved={handleSaved}
+            />
+          </section>
 
-          <div>
-            <h2 className="mb-2 text-lg font-semibold">Trip Logs</h2>
+          <section className="space-y-3">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Trip Logs</h2>
+              <p className="text-sm text-slate-500">Employees can edit or delete only records they created.</p>
+            </div>
             <TripLogsTable
               logs={logs}
               showFinancials={false}
@@ -390,7 +430,7 @@ export default function DashboardPage() {
               onEdit={setEditingLog}
               onDelete={handleDelete}
             />
-          </div>
+          </section>
         </>
       )}
     </main>

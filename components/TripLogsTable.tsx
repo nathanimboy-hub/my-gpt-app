@@ -3,11 +3,12 @@ import { TripLog } from "@/lib/types";
 
 interface TripLogsTableProps {
   logs: TripLog[];
+  showFinancials: boolean;
   onEdit: (log: TripLog) => void;
   onDelete: (log: TripLog) => void;
 }
 
-export function TripLogsTable({ logs, onEdit, onDelete }: TripLogsTableProps) {
+export function TripLogsTable({ logs, showFinancials, onEdit, onDelete }: TripLogsTableProps) {
   return (
     <section className="overflow-hidden rounded-xl bg-white shadow-sm">
       <div className="overflow-x-auto">
@@ -18,7 +19,7 @@ export function TripLogsTable({ logs, onEdit, onDelete }: TripLogsTableProps) {
               <th className="px-3 py-2">Vessel</th>
               <th className="px-3 py-2">Route</th>
               <th className="px-3 py-2">Passengers</th>
-              <th className="px-3 py-2">Sales</th>
+              {showFinancials && <th className="px-3 py-2">Sales</th>}
               <th className="px-3 py-2">Fuel (L)</th>
               <th className="px-3 py-2">Duration</th>
               <th className="px-3 py-2">Actions</th>
@@ -27,7 +28,7 @@ export function TripLogsTable({ logs, onEdit, onDelete }: TripLogsTableProps) {
           <tbody>
             {logs.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-3 py-6 text-center text-slate-500">
+                <td colSpan={showFinancials ? 8 : 7} className="px-3 py-6 text-center text-slate-500">
                   No trip logs yet.
                 </td>
               </tr>
@@ -38,7 +39,7 @@ export function TripLogsTable({ logs, onEdit, onDelete }: TripLogsTableProps) {
                   <td className="px-3 py-2">{log.vessel_name}</td>
                   <td className="px-3 py-2">{log.route_direction}</td>
                   <td className="px-3 py-2">{log.passenger_count}</td>
-                  <td className="px-3 py-2">₱{log.ticket_sales_php.toLocaleString()}</td>
+                  {showFinancials && <td className="px-3 py-2">₱{log.ticket_sales_php.toLocaleString()}</td>}
                   <td className="px-3 py-2">{log.total_fuel_liters.toFixed(2)}</td>
                   <td className="px-3 py-2">{log.trip_duration_minutes} min</td>
                   <td className="px-3 py-2">

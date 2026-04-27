@@ -7,13 +7,14 @@ import { TripLogForm } from "@/components/TripLogForm";
 import { TripLogsTable } from "@/components/TripLogsTable";
 import { toCsv } from "@/lib/csv";
 import { supabase } from "@/lib/supabase";
-import { TripLog } from "@/lib/types";
+import { TripLog, UserRole } from "@/lib/types";
 
 export default function DashboardPage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [logs, setLogs] = useState<TripLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<UserRole>("employee");
   const [editingLog, setEditingLog] = useState<TripLog | null>(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -41,6 +42,7 @@ export default function DashboardPage() {
         return;
       }
       setUserId(data.user.id);
+      setUserRole(data.user.user_metadata?.role === "admin" ? "admin" : "employee");
       await loadLogs();
     };
 
@@ -96,6 +98,7 @@ export default function DashboardPage() {
       fuelPerVehicleRatio: totalVehicles ? totalFuelUsed / totalVehicles : 0
     };
   }, [filteredLogs]);
+  const isAdmin = userRole === "admin";
 
   const analyticsSummary = useMemo(() => {
     const totalTrips = filteredLogs.length;
@@ -145,7 +148,7 @@ export default function DashboardPage() {
   };
 
   const exportCsv = () => {
-    const csv = toCsv(logs);
+    const csv = toCsv(logs, isAdmin);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -201,6 +204,7 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-2xl font-bold">Lite Shipping Dashboard</h1>
           <p className="text-sm text-slate-500">Cebu ↔ Tubigon operations and fuel efficiency</p>
+          <p className="text-xs uppercase tracking-wide text-slate-400">Role: {userRole}</p>
         </div>
         <div className="flex gap-2">
           <button onClick={exportCsv} className="bg-emerald-600 text-white">
@@ -215,7 +219,7 @@ export default function DashboardPage() {
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
         <KpiCard label="Total Trips" value={metrics.totalTrips.toString()} />
         <KpiCard label="Total Passengers" value={metrics.totalPassengers.toLocaleString()} />
-        <KpiCard label="Total Ticket Sales" value={`₱${metrics.totalTicketSales.toLocaleString()}`} />
+        {isAdmin && <KpiCard label="Total Ticket Sales" value={`₱${metrics.totalTicketSales.toLocaleString()}`} />}
         <KpiCard label="Total Fuel Used" value={`${metrics.totalFuelUsed.toFixed(2)} L`} />
         <KpiCard label="Avg Fuel / Trip" value={`${metrics.averageFuelPerTrip.toFixed(2)} L`} />
         <KpiCard
@@ -228,10 +232,12 @@ export default function DashboardPage() {
       <section className="rounded-xl bg-white p-4 shadow-sm">
         <h2 className="mb-3 text-lg font-semibold">Analytics Summary</h2>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          <div className="rounded-lg border border-slate-200 p-3">
-            <p className="text-sm text-slate-500">Total Revenue</p>
-            <p className="text-lg font-semibold">₱{analyticsSummary.totalRevenue.toLocaleString()}</p>
-          </div>
+          {isAdmin && (
+            <div className="rounded-lg border border-slate-200 p-3">
+              <p className="text-sm text-slate-500">Total Revenue</p>
+              <p className="text-lg font-semibold">₱{analyticsSummary.totalRevenue.toLocaleString()}</p>
+            </div>
+          )}
           <div className="rounded-lg border border-slate-200 p-3">
             <p className="text-sm text-slate-500">Total Fuel Used</p>
             <p className="text-lg font-semibold">{analyticsSummary.totalFuelUsed.toFixed(2)} L</p>
@@ -240,10 +246,12 @@ export default function DashboardPage() {
             <p className="text-sm text-slate-500">Average Fuel per Trip</p>
             <p className="text-lg font-semibold">{analyticsSummary.averageFuelPerTrip.toFixed(2)} L</p>
           </div>
-          <div className="rounded-lg border border-slate-200 p-3">
-            <p className="text-sm text-slate-500">Average Revenue per Trip</p>
-            <p className="text-lg font-semibold">₱{analyticsSummary.averageRevenuePerTrip.toLocaleString()}</p>
-          </div>
+          {isAdmin && (
+            <div className="rounded-lg border border-slate-200 p-3">
+              <p className="text-sm text-slate-500">Average Revenue per Trip</p>
+              <p className="text-lg font-semibold">₱{analyticsSummary.averageRevenuePerTrip.toLocaleString()}</p>
+            </div>
+          )}
           <div className="rounded-lg border border-slate-200 p-3">
             <p className="text-sm text-slate-500">Fuel per Passenger</p>
             <p className="text-lg font-semibold">{analyticsSummary.fuelPerPassenger.toFixed(3)} L</p>
@@ -269,7 +277,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <TripLogForm userId={userId} editingLog={editingLog} onSaved={handleSaved} />
+      <TripLogForm userId={userId} isAdmin={isAdmin} editingLog={editingLog} onSaved={handleSaved} />
 
       <div>
         <h2 className="mb-2 text-lg font-semibold">Trip Logs</h2>
@@ -324,7 +332,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </section>
-        <TripLogsTable logs={filteredLogs} onEdit={setEditingLog} onDelete={handleDelete} />
+        <TripLogsTable logs={filteredLogs} showFinancials={isAdmin} onEdit={setEditingLog} onDelete={handleDelete} />
       </div>
     </main>
   );

@@ -10,12 +10,15 @@ import { supabase } from "@/lib/supabase";
 import { getUserRole } from "@/lib/roles";
 import { TripLog, UserRole } from "@/lib/types";
 
+type DashboardTab = "employee" | "admin";
+
 export default function DashboardPage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [logs, setLogs] = useState<TripLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<UserRole>("employee");
+  const [activeTab, setActiveTab] = useState<DashboardTab>("employee");
   const [editingLog, setEditingLog] = useState<TripLog | null>(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -43,7 +46,9 @@ export default function DashboardPage() {
         return;
       }
       setUserId(data.user.id);
-      setUserRole(getUserRole(data.user));
+      const role = getUserRole(data.user);
+      setUserRole(role);
+      setActiveTab(role === "admin" ? "admin" : "employee");
       await loadLogs();
     };
 
@@ -99,6 +104,7 @@ export default function DashboardPage() {
       fuelPerVehicleRatio: totalVehicles ? totalFuelUsed / totalVehicles : 0
     };
   }, [filteredLogs]);
+
   const isAdmin = userRole === "admin";
 
   const analyticsSummary = useMemo(() => {
@@ -181,11 +187,12 @@ export default function DashboardPage() {
       return;
     }
 
-    const { error } = await supabase
-      .from("trip_logs")
-      .delete()
-      .eq("id", log.id)
-      .eq("created_by", userId);
+    let deleteQuery = supabase.from("trip_logs").delete().eq("id", log.id);
+    if (!isAdmin) {
+      deleteQuery = deleteQuery.eq("created_by", userId);
+    }
+
+    const { error } = await deleteQuery;
 
     if (!error) {
       if (editingLog?.id === log.id) {
@@ -217,124 +224,175 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
-        <KpiCard label="Total Trips" value={metrics.totalTrips.toString()} />
-        <KpiCard label="Total Passengers" value={metrics.totalPassengers.toLocaleString()} />
-        {isAdmin && <KpiCard label="Total Ticket Sales" value={`₱${metrics.totalTicketSales.toLocaleString()}`} />}
-        <KpiCard label="Total Fuel Used" value={`${metrics.totalFuelUsed.toFixed(2)} L`} />
-        <KpiCard label="Avg Fuel / Trip" value={`${metrics.averageFuelPerTrip.toFixed(2)} L`} />
-        <KpiCard
-          label="Fuel / Passenger"
-          value={`${metrics.fuelPerPassengerRatio.toFixed(3)} L`}
-        />
-        <KpiCard label="Fuel / Vehicle" value={`${metrics.fuelPerVehicleRatio.toFixed(3)} L`} />
-      </section>
-
-      <section className="rounded-xl bg-white p-4 shadow-sm">
-        <h2 className="mb-3 text-lg font-semibold">Analytics Summary</h2>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <section className="rounded-xl bg-white p-2 shadow-sm">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("employee");
+              setEditingLog(null);
+            }}
+            className={activeTab === "employee" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}
+          >
+            Employee Tab
+          </button>
           {isAdmin && (
-            <div className="rounded-lg border border-slate-200 p-3">
-              <p className="text-sm text-slate-500">Total Revenue</p>
-              <p className="text-lg font-semibold">₱{analyticsSummary.totalRevenue.toLocaleString()}</p>
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("admin");
+                setEditingLog(null);
+              }}
+              className={activeTab === "admin" ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700"}
+            >
+              Admin Tab
+            </button>
           )}
-          <div className="rounded-lg border border-slate-200 p-3">
-            <p className="text-sm text-slate-500">Total Fuel Used</p>
-            <p className="text-lg font-semibold">{analyticsSummary.totalFuelUsed.toFixed(2)} L</p>
-          </div>
-          <div className="rounded-lg border border-slate-200 p-3">
-            <p className="text-sm text-slate-500">Average Fuel per Trip</p>
-            <p className="text-lg font-semibold">{analyticsSummary.averageFuelPerTrip.toFixed(2)} L</p>
-          </div>
-          {isAdmin && (
-            <div className="rounded-lg border border-slate-200 p-3">
-              <p className="text-sm text-slate-500">Average Revenue per Trip</p>
-              <p className="text-lg font-semibold">₱{analyticsSummary.averageRevenuePerTrip.toLocaleString()}</p>
-            </div>
-          )}
-          <div className="rounded-lg border border-slate-200 p-3">
-            <p className="text-sm text-slate-500">Fuel per Passenger</p>
-            <p className="text-lg font-semibold">{analyticsSummary.fuelPerPassenger.toFixed(3)} L</p>
-          </div>
-          <div className="rounded-lg border border-slate-200 p-3 md:col-span-2 xl:col-span-1">
-            <p className="text-sm text-slate-500">Highest Fuel Usage Trip</p>
-            <p className="font-medium">{formatTripLabel(analyticsSummary.highestFuelTrip)}</p>
-            <p className="text-sm text-slate-500">
-              {analyticsSummary.highestFuelTrip
-                ? `${Number(analyticsSummary.highestFuelTrip.total_fuel_liters).toFixed(2)} L`
-                : "—"}
-            </p>
-          </div>
-          <div className="rounded-lg border border-slate-200 p-3 md:col-span-2 xl:col-span-3">
-            <p className="text-sm text-slate-500">Lowest Fuel Usage Trip</p>
-            <p className="font-medium">{formatTripLabel(analyticsSummary.lowestFuelTrip)}</p>
-            <p className="text-sm text-slate-500">
-              {analyticsSummary.lowestFuelTrip
-                ? `${Number(analyticsSummary.lowestFuelTrip.total_fuel_liters).toFixed(2)} L`
-                : "—"}
-            </p>
-          </div>
         </div>
       </section>
 
-      <TripLogForm userId={userId} editingLog={editingLog} onSaved={handleSaved} />
+      {activeTab === "admin" && isAdmin ? (
+        <>
+          <section className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+            <KpiCard label="Total Trips" value={metrics.totalTrips.toString()} />
+            <KpiCard label="Total Passengers" value={metrics.totalPassengers.toLocaleString()} />
+            <KpiCard label="Total Ticket Sales" value={`₱${metrics.totalTicketSales.toLocaleString()}`} />
+            <KpiCard label="Total Fuel Used" value={`${metrics.totalFuelUsed.toFixed(2)} L`} />
+            <KpiCard label="Avg Fuel / Trip" value={`${metrics.averageFuelPerTrip.toFixed(2)} L`} />
+            <KpiCard label="Fuel / Passenger" value={`${metrics.fuelPerPassengerRatio.toFixed(3)} L`} />
+            <KpiCard label="Fuel / Vehicle" value={`${metrics.fuelPerVehicleRatio.toFixed(3)} L`} />
+          </section>
 
-      <div>
-        <h2 className="mb-2 text-lg font-semibold">Trip Logs</h2>
-        <section className="mb-3 rounded-xl bg-white p-4 shadow-sm">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
-            <div>
-              <label htmlFor="date-from-filter">Date From</label>
-              <input
-                id="date-from-filter"
-                type="date"
-                value={dateFrom}
-                onChange={(event) => setDateFrom(event.target.value)}
-              />
+          <section className="rounded-xl bg-white p-4 shadow-sm">
+            <h2 className="mb-3 text-lg font-semibold">Analytics Summary</h2>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <div className="rounded-lg border border-slate-200 p-3">
+                <p className="text-sm text-slate-500">Total Revenue</p>
+                <p className="text-lg font-semibold">₱{analyticsSummary.totalRevenue.toLocaleString()}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 p-3">
+                <p className="text-sm text-slate-500">Total Fuel Used</p>
+                <p className="text-lg font-semibold">{analyticsSummary.totalFuelUsed.toFixed(2)} L</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 p-3">
+                <p className="text-sm text-slate-500">Average Fuel per Trip</p>
+                <p className="text-lg font-semibold">{analyticsSummary.averageFuelPerTrip.toFixed(2)} L</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 p-3">
+                <p className="text-sm text-slate-500">Average Revenue per Trip</p>
+                <p className="text-lg font-semibold">₱{analyticsSummary.averageRevenuePerTrip.toLocaleString()}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 p-3">
+                <p className="text-sm text-slate-500">Fuel per Passenger</p>
+                <p className="text-lg font-semibold">{analyticsSummary.fuelPerPassenger.toFixed(3)} L</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 p-3 md:col-span-2 xl:col-span-1">
+                <p className="text-sm text-slate-500">Highest Fuel Usage Trip</p>
+                <p className="font-medium">{formatTripLabel(analyticsSummary.highestFuelTrip)}</p>
+                <p className="text-sm text-slate-500">
+                  {analyticsSummary.highestFuelTrip
+                    ? `${Number(analyticsSummary.highestFuelTrip.total_fuel_liters).toFixed(2)} L`
+                    : "—"}
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-200 p-3 md:col-span-2 xl:col-span-3">
+                <p className="text-sm text-slate-500">Lowest Fuel Usage Trip</p>
+                <p className="font-medium">{formatTripLabel(analyticsSummary.lowestFuelTrip)}</p>
+                <p className="text-sm text-slate-500">
+                  {analyticsSummary.lowestFuelTrip
+                    ? `${Number(analyticsSummary.lowestFuelTrip.total_fuel_liters).toFixed(2)} L`
+                    : "—"}
+                </p>
+              </div>
             </div>
-            <div>
-              <label htmlFor="date-to-filter">Date To</label>
-              <input
-                id="date-to-filter"
-                type="date"
-                value={dateTo}
-                onChange={(event) => setDateTo(event.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="vessel-filter">Vessel Name</label>
-              <select
-                id="vessel-filter"
-                value={vesselNameFilter}
-                onChange={(event) => setVesselNameFilter(event.target.value)}
-              >
-                <option value="">All Vessels</option>
-                <option value="Lite Cat 1">Lite Cat 1</option>
-                <option value="Lite Cat 2">Lite Cat 2</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="route-filter">Route Direction</label>
-              <select
-                id="route-filter"
-                value={routeDirectionFilter}
-                onChange={(event) => setRouteDirectionFilter(event.target.value)}
-              >
-                <option value="">All Routes</option>
-                <option value="Cebu to Tubigon">Cebu to Tubigon</option>
-                <option value="Tubigon to Cebu">Tubigon to Cebu</option>
-              </select>
-            </div>
-            <div className="flex items-end">
-              <button type="button" onClick={clearFilters} className="w-full bg-slate-200 text-slate-700">
-                Clear Filters
-              </button>
-            </div>
+          </section>
+
+          <div>
+            <h2 className="mb-2 text-lg font-semibold">Trip Logs</h2>
+            <section className="mb-3 rounded-xl bg-white p-4 shadow-sm">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+                <div>
+                  <label htmlFor="date-from-filter">Date From</label>
+                  <input
+                    id="date-from-filter"
+                    type="date"
+                    value={dateFrom}
+                    onChange={(event) => setDateFrom(event.target.value)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="date-to-filter">Date To</label>
+                  <input
+                    id="date-to-filter"
+                    type="date"
+                    value={dateTo}
+                    onChange={(event) => setDateTo(event.target.value)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="vessel-filter">Vessel Name</label>
+                  <select
+                    id="vessel-filter"
+                    value={vesselNameFilter}
+                    onChange={(event) => setVesselNameFilter(event.target.value)}
+                  >
+                    <option value="">All Vessels</option>
+                    <option value="Lite Cat 1">Lite Cat 1</option>
+                    <option value="Lite Cat 2">Lite Cat 2</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="route-filter">Route Direction</label>
+                  <select
+                    id="route-filter"
+                    value={routeDirectionFilter}
+                    onChange={(event) => setRouteDirectionFilter(event.target.value)}
+                  >
+                    <option value="">All Routes</option>
+                    <option value="Cebu to Tubigon">Cebu to Tubigon</option>
+                    <option value="Tubigon to Cebu">Tubigon to Cebu</option>
+                  </select>
+                </div>
+                <div className="flex items-end">
+                  <button type="button" onClick={clearFilters} className="w-full bg-slate-200 text-slate-700">
+                    Clear Filters
+                  </button>
+                </div>
+              </div>
+            </section>
+            <TripLogsTable
+              logs={filteredLogs}
+              showFinancials={true}
+              currentUserId={userId}
+              userRole={userRole}
+              onEdit={setEditingLog}
+              onDelete={handleDelete}
+            />
           </div>
-        </section>
-        <TripLogsTable logs={filteredLogs} showFinancials={isAdmin} onEdit={setEditingLog} onDelete={handleDelete} />
-      </div>
+        </>
+      ) : (
+        <>
+          <TripLogForm
+            userId={userId}
+            editingLog={editingLog}
+            showFinancialFields={isAdmin}
+            canManageAllLogs={isAdmin}
+            onSaved={handleSaved}
+          />
+
+          <div>
+            <h2 className="mb-2 text-lg font-semibold">Trip Logs</h2>
+            <TripLogsTable
+              logs={logs}
+              showFinancials={false}
+              currentUserId={userId}
+              userRole={userRole}
+              onEdit={setEditingLog}
+              onDelete={handleDelete}
+            />
+          </div>
+        </>
+      )}
     </main>
   );
 }

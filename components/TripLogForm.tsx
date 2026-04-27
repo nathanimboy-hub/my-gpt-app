@@ -10,6 +10,8 @@ import { TripLogFormValues, tripLogSchema } from "@/lib/validation";
 interface TripLogFormProps {
   userId: string | null;
   editingLog: TripLog | null;
+  showFinancialFields: boolean;
+  canManageAllLogs: boolean;
   onSaved: () => Promise<void>;
 }
 
@@ -37,7 +39,13 @@ const toDateTimeLocal = (value: string) => {
   return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16);
 };
 
-export function TripLogForm({ userId, editingLog, onSaved }: TripLogFormProps) {
+export function TripLogForm({
+  userId,
+  editingLog,
+  showFinancialFields,
+  canManageAllLogs,
+  onSaved
+}: TripLogFormProps) {
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -117,13 +125,15 @@ export function TripLogForm({ userId, editingLog, onSaved }: TripLogFormProps) {
       created_by: ownerId
     };
 
-    const query = editingLog
-      ? supabase
-          .from("trip_logs")
-          .update(payload)
-          .eq("id", editingLog.id)
-          .eq("created_by", ownerId)
-      : supabase.from("trip_logs").insert(payload);
+    let query;
+    if (editingLog) {
+      query = supabase.from("trip_logs").update(payload).eq("id", editingLog.id);
+      if (!canManageAllLogs) {
+        query = query.eq("created_by", ownerId);
+      }
+    } else {
+      query = supabase.from("trip_logs").insert(payload);
+    }
 
     const { error } = await query;
 
@@ -183,10 +193,12 @@ export function TripLogForm({ userId, editingLog, onSaved }: TripLogFormProps) {
           <input type="number" min={0} required {...register("passenger_count")} />
           {errors.passenger_count && <p className="text-xs text-red-600">{errors.passenger_count.message}</p>}
         </div>
-        <div>
-          <label>Ticket Sales (PHP)</label>
-          <input type="number" min={0} step="0.01" {...register("ticket_sales_php")} />
-        </div>
+        {showFinancialFields && (
+          <div>
+            <label>Ticket Sales (PHP)</label>
+            <input type="number" min={0} step="0.01" {...register("ticket_sales_php")} />
+          </div>
+        )}
         <div>
           <label>Cargo Count</label>
           <input type="number" min={0} {...register("cargo_count")} />

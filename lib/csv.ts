@@ -22,8 +22,17 @@ const columns: (keyof TripLog)[] = [
   "created_at"
 ];
 
+const columnLabels: Partial<Record<keyof TripLog, string>> = {
+  fuel_steaming_liters: "Main Engine Fuel Steaming (L)",
+  fuel_maneuvering_liters: "Main Engine Fuel Maneuvering (L)",
+  generator_fuel_liters: "Auxiliary Engine Fuel (L)"
+};
+
 export function toCsv(logs: TripLog[]): string {
-  const header = columns.join(",");
+  const header = columns
+    .map((column) => columnLabels[column] ?? column)
+    .map((label) => `"${String(label).replace(/"/g, '""')}"`)
+    .join(",");
   const rows = logs.map((log) =>
     columns
       .map((column) => {

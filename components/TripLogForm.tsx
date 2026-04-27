@@ -182,15 +182,15 @@ export function TripLogForm({ userId, editingLog, onSaved }: TripLogFormProps) {
           <input type="number" min={0} {...register("trucks_count")} />
         </div>
         <div>
-          <label>Fuel Steaming (L)</label>
+          <label>Main Engine Fuel Steaming (L)</label>
           <input type="number" min={0} step="0.01" {...register("fuel_steaming_liters")} />
         </div>
         <div>
-          <label>Fuel Maneuvering (L)</label>
+          <label>Main Engine Fuel Maneuvering (L)</label>
           <input type="number" min={0} step="0.01" {...register("fuel_maneuvering_liters")} />
         </div>
         <div>
-          <label>Generator Fuel (L)</label>
+          <label>Auxiliary Engine Fuel (L)</label>
           <input type="number" min={0} step="0.01" {...register("generator_fuel_liters")} />
         </div>
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">

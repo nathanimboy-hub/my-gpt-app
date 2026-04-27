@@ -7,6 +7,7 @@ import { TripLogForm } from "@/components/TripLogForm";
 import { TripLogsTable } from "@/components/TripLogsTable";
 import { toCsv } from "@/lib/csv";
 import { supabase } from "@/lib/supabase";
+import { getUserRole } from "@/lib/roles";
 import { TripLog, UserRole } from "@/lib/types";
 
 export default function DashboardPage() {
@@ -42,7 +43,7 @@ export default function DashboardPage() {
         return;
       }
       setUserId(data.user.id);
-      setUserRole(data.user.user_metadata?.role === "admin" ? "admin" : "employee");
+      setUserRole(getUserRole(data.user));
       await loadLogs();
     };
 

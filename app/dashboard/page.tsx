@@ -97,6 +97,46 @@ export default function DashboardPage() {
     };
   }, [filteredLogs]);
 
+  const analyticsSummary = useMemo(() => {
+    const totalTrips = filteredLogs.length;
+    const totalRevenue = filteredLogs.reduce((sum, log) => sum + Number(log.ticket_sales_php), 0);
+    const totalFuelUsed = filteredLogs.reduce((sum, log) => sum + Number(log.total_fuel_liters), 0);
+    const totalPassengers = filteredLogs.reduce((sum, log) => sum + Number(log.passenger_count), 0);
+
+    const highestFuelTrip = filteredLogs.reduce<TripLog | null>((highest, current) => {
+      if (!highest) {
+        return current;
+      }
+      return Number(current.total_fuel_liters) > Number(highest.total_fuel_liters) ? current : highest;
+    }, null);
+
+    const lowestFuelTrip = filteredLogs.reduce<TripLog | null>((lowest, current) => {
+      if (!lowest) {
+        return current;
+      }
+      return Number(current.total_fuel_liters) < Number(lowest.total_fuel_liters) ? current : lowest;
+    }, null);
+
+    return {
+      totalRevenue,
+      totalFuelUsed,
+      averageFuelPerTrip: totalTrips ? totalFuelUsed / totalTrips : 0,
+      averageRevenuePerTrip: totalTrips ? totalRevenue / totalTrips : 0,
+      fuelPerPassenger: totalPassengers ? totalFuelUsed / totalPassengers : 0,
+      highestFuelTrip,
+      lowestFuelTrip
+    };
+  }, [filteredLogs]);
+
+  const formatTripLabel = (trip: TripLog | null) => {
+    if (!trip) {
+      return "No trips in current filter";
+    }
+
+    const tripDate = new Date(trip.created_at).toLocaleDateString();
+    return `${trip.vessel_name} • ${trip.route_direction} • ${tripDate}`;
+  };
+
   const clearFilters = () => {
     setDateFrom("");
     setDateTo("");
@@ -181,6 +221,50 @@ export default function DashboardPage() {
           value={`${metrics.fuelPerPassengerRatio.toFixed(3)} L`}
         />
         <KpiCard label="Fuel / Vehicle" value={`${metrics.fuelPerVehicleRatio.toFixed(3)} L`} />
+      </section>
+
+      <section className="rounded-xl bg-white p-4 shadow-sm">
+        <h2 className="mb-3 text-lg font-semibold">Analytics Summary</h2>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="rounded-lg border border-slate-200 p-3">
+            <p className="text-sm text-slate-500">Total Revenue</p>
+            <p className="text-lg font-semibold">₱{analyticsSummary.totalRevenue.toLocaleString()}</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 p-3">
+            <p className="text-sm text-slate-500">Total Fuel Used</p>
+            <p className="text-lg font-semibold">{analyticsSummary.totalFuelUsed.toFixed(2)} L</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 p-3">
+            <p className="text-sm text-slate-500">Average Fuel per Trip</p>
+            <p className="text-lg font-semibold">{analyticsSummary.averageFuelPerTrip.toFixed(2)} L</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 p-3">
+            <p className="text-sm text-slate-500">Average Revenue per Trip</p>
+            <p className="text-lg font-semibold">₱{analyticsSummary.averageRevenuePerTrip.toLocaleString()}</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 p-3">
+            <p className="text-sm text-slate-500">Fuel per Passenger</p>
+            <p className="text-lg font-semibold">{analyticsSummary.fuelPerPassenger.toFixed(3)} L</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 p-3 md:col-span-2 xl:col-span-1">
+            <p className="text-sm text-slate-500">Highest Fuel Usage Trip</p>
+            <p className="font-medium">{formatTripLabel(analyticsSummary.highestFuelTrip)}</p>
+            <p className="text-sm text-slate-500">
+              {analyticsSummary.highestFuelTrip
+                ? `${Number(analyticsSummary.highestFuelTrip.total_fuel_liters).toFixed(2)} L`
+                : "—"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-slate-200 p-3 md:col-span-2 xl:col-span-3">
+            <p className="text-sm text-slate-500">Lowest Fuel Usage Trip</p>
+            <p className="font-medium">{formatTripLabel(analyticsSummary.lowestFuelTrip)}</p>
+            <p className="text-sm text-slate-500">
+              {analyticsSummary.lowestFuelTrip
+                ? `${Number(analyticsSummary.lowestFuelTrip.total_fuel_liters).toFixed(2)} L`
+                : "—"}
+            </p>
+          </div>
+        </div>
       </section>
 
       <TripLogForm userId={userId} editingLog={editingLog} onSaved={handleSaved} />

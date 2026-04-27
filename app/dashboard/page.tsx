@@ -85,6 +85,22 @@ export default function DashboardPage() {
     setEditingLog(null);
   };
 
+  const handleDelete = async (log: TripLog) => {
+    const confirmed = window.confirm("Are you sure you want to delete this trip log?");
+    if (!confirmed) {
+      return;
+    }
+
+    const { error } = await supabase.from("trip_logs").delete().eq("id", log.id);
+
+    if (!error) {
+      if (editingLog?.id === log.id) {
+        setEditingLog(null);
+      }
+      await loadLogs();
+    }
+  };
+
   if (loading) {
     return <main className="p-4">Loading...</main>;
   }
@@ -123,7 +139,7 @@ export default function DashboardPage() {
 
       <div>
         <h2 className="mb-2 text-lg font-semibold">Trip Logs</h2>
-        <TripLogsTable logs={logs} onEdit={setEditingLog} />
+        <TripLogsTable logs={logs} onEdit={setEditingLog} onDelete={handleDelete} />
       </div>
     </main>
   );

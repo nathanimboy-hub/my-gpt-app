@@ -86,12 +86,20 @@ export default function DashboardPage() {
   };
 
   const handleDelete = async (log: TripLog) => {
+    if (!userId) {
+      return;
+    }
+
     const confirmed = window.confirm("Are you sure you want to delete this trip log?");
     if (!confirmed) {
       return;
     }
 
-    const { error } = await supabase.from("trip_logs").delete().eq("id", log.id);
+    const { error } = await supabase
+      .from("trip_logs")
+      .delete()
+      .eq("id", log.id)
+      .eq("created_by", userId);
 
     if (!error) {
       if (editingLog?.id === log.id) {
@@ -135,7 +143,7 @@ export default function DashboardPage() {
         <KpiCard label="Fuel / Vehicle" value={`${metrics.fuelPerVehicleRatio.toFixed(3)} L`} />
       </section>
 
-      {userId && <TripLogForm userId={userId} editingLog={editingLog} onSaved={handleSaved} />}
+      <TripLogForm userId={userId} editingLog={editingLog} onSaved={handleSaved} />
 
       <div>
         <h2 className="mb-2 text-lg font-semibold">Trip Logs</h2>

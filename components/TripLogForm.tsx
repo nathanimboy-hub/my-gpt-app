@@ -8,7 +8,7 @@ import { TripLog } from "@/lib/types";
 import { TripLogFormValues, tripLogSchema } from "@/lib/validation";
 
 interface TripLogFormProps {
-  userId: string;
+  userId: string | null;
   editingLog: TripLog | null;
   onSaved: () => Promise<void>;
 }
@@ -98,16 +98,31 @@ export function TripLogForm({ userId, editingLog, onSaved }: TripLogFormProps) {
     setSaving(true);
     setSubmitError(null);
 
+    let ownerId = userId;
+    if (!ownerId) {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData.user?.id) {
+        setSubmitError("Unable to verify your user account. Please sign in again.");
+        setSaving(false);
+        return;
+      }
+      ownerId = authData.user.id;
+    }
+
     const payload = {
       ...data,
       notes: data.notes || null,
       total_fuel_liters: totalFuelLiters,
       trip_duration_minutes: tripDurationMinutes,
-      created_by: userId
+      created_by: ownerId
     };
 
     const query = editingLog
-      ? supabase.from("trip_logs").update(payload).eq("id", editingLog.id)
+      ? supabase
+          .from("trip_logs")
+          .update(payload)
+          .eq("id", editingLog.id)
+          .eq("created_by", ownerId)
       : supabase.from("trip_logs").insert(payload);
 
     const { error } = await query;

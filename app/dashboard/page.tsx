@@ -24,7 +24,7 @@ export default function DashboardPage() {
     const { data, error } = await supabase
       .from("trip_logs")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("scheduled_departure_time", { ascending: false });
 
     if (!error && data) {
       setLogs(data as TripLog[]);
@@ -49,7 +49,7 @@ export default function DashboardPage() {
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
-      const logDate = new Date(log.created_at);
+      const logDate = new Date(log.scheduled_departure_time);
       if (dateFrom) {
         const startDate = new Date(`${dateFrom}T00:00:00`);
         if (logDate < startDate) {
@@ -133,7 +133,7 @@ export default function DashboardPage() {
       return "No trips in current filter";
     }
 
-    const tripDate = new Date(trip.created_at).toLocaleDateString();
+    const tripDate = new Date(trip.scheduled_departure_time).toLocaleDateString();
     return `${trip.vessel_name} • ${trip.route_direction} • ${tripDate}`;
   };
 

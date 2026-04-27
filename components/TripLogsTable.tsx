@@ -34,7 +34,7 @@ export function TripLogsTable({ logs, onEdit, onDelete }: TripLogsTableProps) {
             ) : (
               logs.map((log) => (
                 <tr key={log.id} className="border-t border-slate-100">
-                  <td className="px-3 py-2">{format(new Date(log.created_at), "MMM d, yyyy HH:mm")}</td>
+                  <td className="px-3 py-2">{format(new Date(log.scheduled_departure_time), "MMM d, h:mm a")}</td>
                   <td className="px-3 py-2">{log.vessel_name}</td>
                   <td className="px-3 py-2">{log.route_direction}</td>
                   <td className="px-3 py-2">{log.passenger_count}</td>

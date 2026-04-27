@@ -170,7 +170,9 @@ export default function DashboardPage() {
       return;
     }
 
-    const confirmed = window.confirm("Are you sure you want to delete this trip log?");
+    const confirmed = window.confirm(
+      `Delete trip log for ${log.vessel_name} (${new Date(log.scheduled_departure_time).toLocaleString()})?\nThis action cannot be undone.`
+    );
     if (!confirmed) {
       return;
     }

@@ -159,22 +159,29 @@ export function TripLogForm({ userId, editingLog, onSaved }: TripLogFormProps) {
         </div>
         <div>
           <label>Scheduled Departure</label>
-          <input type="datetime-local" {...register("scheduled_departure_time")} />
+          <input type="datetime-local" required {...register("scheduled_departure_time")} />
+          {errors.scheduled_departure_time && (
+            <p className="text-xs text-red-600">{errors.scheduled_departure_time.message}</p>
+          )}
         </div>
         <div>
           <label>Actual Departure</label>
-          <input type="datetime-local" {...register("actual_departure_time")} />
+          <input type="datetime-local" required {...register("actual_departure_time")} />
+          {errors.actual_departure_time && (
+            <p className="text-xs text-red-600">{errors.actual_departure_time.message}</p>
+          )}
         </div>
         <div>
           <label>Actual Arrival</label>
-          <input type="datetime-local" {...register("actual_arrival_time")} />
+          <input type="datetime-local" required {...register("actual_arrival_time")} />
           {errors.actual_arrival_time && (
             <p className="text-xs text-red-600">{errors.actual_arrival_time.message}</p>
           )}
         </div>
         <div>
           <label>Passenger Count</label>
-          <input type="number" min={0} {...register("passenger_count")} />
+          <input type="number" min={0} required {...register("passenger_count")} />
+          {errors.passenger_count && <p className="text-xs text-red-600">{errors.passenger_count.message}</p>}
         </div>
         <div>
           <label>Ticket Sales (PHP)</label>
@@ -198,15 +205,24 @@ export function TripLogForm({ userId, editingLog, onSaved }: TripLogFormProps) {
         </div>
         <div>
           <label>Main Engine Fuel Steaming (L)</label>
-          <input type="number" min={0} step="0.01" {...register("fuel_steaming_liters")} />
+          <input type="number" min={0} step="0.01" required {...register("fuel_steaming_liters")} />
+          {errors.fuel_steaming_liters && (
+            <p className="text-xs text-red-600">{errors.fuel_steaming_liters.message}</p>
+          )}
         </div>
         <div>
           <label>Main Engine Fuel Maneuvering (L)</label>
-          <input type="number" min={0} step="0.01" {...register("fuel_maneuvering_liters")} />
+          <input type="number" min={0} step="0.01" required {...register("fuel_maneuvering_liters")} />
+          {errors.fuel_maneuvering_liters && (
+            <p className="text-xs text-red-600">{errors.fuel_maneuvering_liters.message}</p>
+          )}
         </div>
         <div>
           <label>Auxiliary Engine Fuel (L)</label>
-          <input type="number" min={0} step="0.01" {...register("generator_fuel_liters")} />
+          <input type="number" min={0} step="0.01" required {...register("generator_fuel_liters")} />
+          {errors.generator_fuel_liters && (
+            <p className="text-xs text-red-600">{errors.generator_fuel_liters.message}</p>
+          )}
         </div>
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
           <p className="text-xs text-slate-600">Total Fuel (auto)</p>

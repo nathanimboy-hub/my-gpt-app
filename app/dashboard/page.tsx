@@ -15,6 +15,10 @@ export default function DashboardPage() {
   const [logs, setLogs] = useState<TripLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingLog, setEditingLog] = useState<TripLog | null>(null);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [vesselNameFilter, setVesselNameFilter] = useState("");
+  const [routeDirectionFilter, setRouteDirectionFilter] = useState("");
 
   const loadLogs = async () => {
     const { data, error } = await supabase
@@ -43,12 +47,41 @@ export default function DashboardPage() {
     void setup();
   }, [router]);
 
+  const filteredLogs = useMemo(() => {
+    return logs.filter((log) => {
+      const logDate = new Date(log.created_at);
+      if (dateFrom) {
+        const startDate = new Date(`${dateFrom}T00:00:00`);
+        if (logDate < startDate) {
+          return false;
+        }
+      }
+
+      if (dateTo) {
+        const endDate = new Date(`${dateTo}T23:59:59.999`);
+        if (logDate > endDate) {
+          return false;
+        }
+      }
+
+      if (vesselNameFilter && log.vessel_name !== vesselNameFilter) {
+        return false;
+      }
+
+      if (routeDirectionFilter && log.route_direction !== routeDirectionFilter) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [dateFrom, dateTo, logs, routeDirectionFilter, vesselNameFilter]);
+
   const metrics = useMemo(() => {
-    const totalTrips = logs.length;
-    const totalPassengers = logs.reduce((sum, log) => sum + log.passenger_count, 0);
-    const totalTicketSales = logs.reduce((sum, log) => sum + Number(log.ticket_sales_php), 0);
-    const totalFuelUsed = logs.reduce((sum, log) => sum + Number(log.total_fuel_liters), 0);
-    const totalVehicles = logs.reduce(
+    const totalTrips = filteredLogs.length;
+    const totalPassengers = filteredLogs.reduce((sum, log) => sum + log.passenger_count, 0);
+    const totalTicketSales = filteredLogs.reduce((sum, log) => sum + Number(log.ticket_sales_php), 0);
+    const totalFuelUsed = filteredLogs.reduce((sum, log) => sum + Number(log.total_fuel_liters), 0);
+    const totalVehicles = filteredLogs.reduce(
       (sum, log) => sum + log.motorcycles_count + log.cars_count + log.trucks_count,
       0
     );
@@ -62,7 +95,14 @@ export default function DashboardPage() {
       fuelPerPassengerRatio: totalPassengers ? totalFuelUsed / totalPassengers : 0,
       fuelPerVehicleRatio: totalVehicles ? totalFuelUsed / totalVehicles : 0
     };
-  }, [logs]);
+  }, [filteredLogs]);
+
+  const clearFilters = () => {
+    setDateFrom("");
+    setDateTo("");
+    setVesselNameFilter("");
+    setRouteDirectionFilter("");
+  };
 
   const exportCsv = () => {
     const csv = toCsv(logs);
@@ -147,7 +187,58 @@ export default function DashboardPage() {
 
       <div>
         <h2 className="mb-2 text-lg font-semibold">Trip Logs</h2>
-        <TripLogsTable logs={logs} onEdit={setEditingLog} onDelete={handleDelete} />
+        <section className="mb-3 rounded-xl bg-white p-4 shadow-sm">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+            <div>
+              <label htmlFor="date-from-filter">Date From</label>
+              <input
+                id="date-from-filter"
+                type="date"
+                value={dateFrom}
+                onChange={(event) => setDateFrom(event.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="date-to-filter">Date To</label>
+              <input
+                id="date-to-filter"
+                type="date"
+                value={dateTo}
+                onChange={(event) => setDateTo(event.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="vessel-filter">Vessel Name</label>
+              <select
+                id="vessel-filter"
+                value={vesselNameFilter}
+                onChange={(event) => setVesselNameFilter(event.target.value)}
+              >
+                <option value="">All Vessels</option>
+                <option value="Lite Cat 1">Lite Cat 1</option>
+                <option value="Lite Cat 2">Lite Cat 2</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="route-filter">Route Direction</label>
+              <select
+                id="route-filter"
+                value={routeDirectionFilter}
+                onChange={(event) => setRouteDirectionFilter(event.target.value)}
+              >
+                <option value="">All Routes</option>
+                <option value="Cebu to Tubigon">Cebu to Tubigon</option>
+                <option value="Tubigon to Cebu">Tubigon to Cebu</option>
+              </select>
+            </div>
+            <div className="flex items-end">
+              <button type="button" onClick={clearFilters} className="w-full bg-slate-200 text-slate-700">
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        </section>
+        <TripLogsTable logs={filteredLogs} onEdit={setEditingLog} onDelete={handleDelete} />
       </div>
     </main>
   );

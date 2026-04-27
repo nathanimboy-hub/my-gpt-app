@@ -375,7 +375,7 @@ export default function DashboardPage() {
           <TripLogForm
             userId={userId}
             editingLog={editingLog}
-            showFinancialFields={isAdmin}
+            showFinancialFields={true}
             canManageAllLogs={isAdmin}
             onSaved={handleSaved}
           />

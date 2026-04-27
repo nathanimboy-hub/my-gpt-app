@@ -14,6 +14,7 @@ export default function DashboardPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [logs, setLogs] = useState<TripLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingLog, setEditingLog] = useState<TripLog | null>(null);
 
   const loadLogs = async () => {
     const { data, error } = await supabase
@@ -79,6 +80,11 @@ export default function DashboardPage() {
     router.push("/login");
   };
 
+  const handleSaved = async () => {
+    await loadLogs();
+    setEditingLog(null);
+  };
+
   if (loading) {
     return <main className="p-4">Loading...</main>;
   }
@@ -113,11 +119,11 @@ export default function DashboardPage() {
         <KpiCard label="Fuel / Vehicle" value={`${metrics.fuelPerVehicleRatio.toFixed(3)} L`} />
       </section>
 
-      {userId && <TripLogForm userId={userId} onSaved={loadLogs} />}
+      {userId && <TripLogForm userId={userId} editingLog={editingLog} onSaved={handleSaved} />}
 
       <div>
         <h2 className="mb-2 text-lg font-semibold">Trip Logs</h2>
-        <TripLogsTable logs={logs} />
+        <TripLogsTable logs={logs} onEdit={setEditingLog} />
       </div>
     </main>
   );

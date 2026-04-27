@@ -1,17 +1,43 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/lib/supabase";
+import { TripLog } from "@/lib/types";
 import { TripLogFormValues, tripLogSchema } from "@/lib/validation";
 
 interface TripLogFormProps {
   userId: string;
+  editingLog: TripLog | null;
   onSaved: () => Promise<void>;
 }
 
-export function TripLogForm({ userId, onSaved }: TripLogFormProps) {
+const defaultFormValues: TripLogFormValues = {
+  vessel_name: "Lite Cat 1",
+  route_direction: "Cebu to Tubigon",
+  scheduled_departure_time: "",
+  actual_departure_time: "",
+  actual_arrival_time: "",
+  passenger_count: 0,
+  ticket_sales_php: 0,
+  cargo_count: 0,
+  motorcycles_count: 0,
+  cars_count: 0,
+  trucks_count: 0,
+  fuel_steaming_liters: 0,
+  fuel_maneuvering_liters: 0,
+  generator_fuel_liters: 0,
+  notes: ""
+};
+
+const toDateTimeLocal = (value: string) => {
+  const date = new Date(value);
+  const timezoneOffset = date.getTimezoneOffset() * 60 * 1000;
+  return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16);
+};
+
+export function TripLogForm({ userId, editingLog, onSaved }: TripLogFormProps) {
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -23,21 +49,33 @@ export function TripLogForm({ userId, onSaved }: TripLogFormProps) {
     reset
   } = useForm<TripLogFormValues>({
     resolver: zodResolver(tripLogSchema),
-    defaultValues: {
-      vessel_name: "Lite Cat 1",
-      route_direction: "Cebu to Tubigon",
-      passenger_count: 0,
-      ticket_sales_php: 0,
-      cargo_count: 0,
-      motorcycles_count: 0,
-      cars_count: 0,
-      trucks_count: 0,
-      fuel_steaming_liters: 0,
-      fuel_maneuvering_liters: 0,
-      generator_fuel_liters: 0,
-      notes: ""
-    }
+    defaultValues: defaultFormValues
   });
+
+  useEffect(() => {
+    if (!editingLog) {
+      reset(defaultFormValues);
+      return;
+    }
+
+    reset({
+      vessel_name: editingLog.vessel_name,
+      route_direction: editingLog.route_direction,
+      scheduled_departure_time: toDateTimeLocal(editingLog.scheduled_departure_time),
+      actual_departure_time: toDateTimeLocal(editingLog.actual_departure_time),
+      actual_arrival_time: toDateTimeLocal(editingLog.actual_arrival_time),
+      passenger_count: editingLog.passenger_count,
+      ticket_sales_php: editingLog.ticket_sales_php,
+      cargo_count: editingLog.cargo_count,
+      motorcycles_count: editingLog.motorcycles_count,
+      cars_count: editingLog.cars_count,
+      trucks_count: editingLog.trucks_count,
+      fuel_steaming_liters: editingLog.fuel_steaming_liters,
+      fuel_maneuvering_liters: editingLog.fuel_maneuvering_liters,
+      generator_fuel_liters: editingLog.generator_fuel_liters,
+      notes: editingLog.notes || ""
+    });
+  }, [editingLog, reset]);
 
   const fuelSteaming = watch("fuel_steaming_liters") || 0;
   const fuelManeuvering = watch("fuel_maneuvering_liters") || 0;
@@ -68,7 +106,11 @@ export function TripLogForm({ userId, onSaved }: TripLogFormProps) {
       created_by: userId
     };
 
-    const { error } = await supabase.from("trip_logs").insert(payload);
+    const query = editingLog
+      ? supabase.from("trip_logs").update(payload).eq("id", editingLog.id)
+      : supabase.from("trip_logs").insert(payload);
+
+    const { error } = await query;
 
     if (error) {
       setSubmitError(error.message);
@@ -76,14 +118,15 @@ export function TripLogForm({ userId, onSaved }: TripLogFormProps) {
       return;
     }
 
-    reset();
     await onSaved();
     setSaving(false);
   };
 
+  const isEditing = Boolean(editingLog);
+
   return (
     <section className="rounded-xl bg-white p-4 shadow-sm">
-      <h2 className="text-lg font-semibold">Add Trip Log</h2>
+      <h2 className="text-lg font-semibold">{isEditing ? "Edit Trip Log" : "Add Trip Log"}</h2>
       <form onSubmit={handleSubmit(onSubmit)} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label>Vessel Name</label>
@@ -164,7 +207,7 @@ export function TripLogForm({ userId, onSaved }: TripLogFormProps) {
         </div>
         {submitError && <p className="sm:col-span-2 text-sm text-red-600">{submitError}</p>}
         <button type="submit" disabled={saving} className="sm:col-span-2 bg-blue-600 text-white">
-          {saving ? "Saving..." : "Save Trip Log"}
+          {saving ? "Saving..." : isEditing ? "Update Trip Log" : "Save Trip Log"}
         </button>
       </form>
     </section>

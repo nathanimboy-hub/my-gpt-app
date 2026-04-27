@@ -9,7 +9,6 @@ import { TripLogFormValues, tripLogSchema } from "@/lib/validation";
 
 interface TripLogFormProps {
   userId: string | null;
-  isAdmin: boolean;
   editingLog: TripLog | null;
   onSaved: () => Promise<void>;
 }
@@ -38,7 +37,7 @@ const toDateTimeLocal = (value: string) => {
   return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16);
 };
 
-export function TripLogForm({ userId, isAdmin, editingLog, onSaved }: TripLogFormProps) {
+export function TripLogForm({ userId, editingLog, onSaved }: TripLogFormProps) {
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -112,7 +111,6 @@ export function TripLogForm({ userId, isAdmin, editingLog, onSaved }: TripLogFor
 
     const payload = {
       ...data,
-      ticket_sales_php: isAdmin ? data.ticket_sales_php : editingLog?.ticket_sales_php ?? 0,
       notes: data.notes || null,
       total_fuel_liters: totalFuelLiters,
       trip_duration_minutes: tripDurationMinutes,
@@ -185,12 +183,10 @@ export function TripLogForm({ userId, isAdmin, editingLog, onSaved }: TripLogFor
           <input type="number" min={0} required {...register("passenger_count")} />
           {errors.passenger_count && <p className="text-xs text-red-600">{errors.passenger_count.message}</p>}
         </div>
-        {isAdmin && (
-          <div>
-            <label>Ticket Sales (PHP)</label>
-            <input type="number" min={0} step="0.01" {...register("ticket_sales_php")} />
-          </div>
-        )}
+        <div>
+          <label>Ticket Sales (PHP)</label>
+          <input type="number" min={0} step="0.01" {...register("ticket_sales_php")} />
+        </div>
         <div>
           <label>Cargo Count</label>
           <input type="number" min={0} {...register("cargo_count")} />

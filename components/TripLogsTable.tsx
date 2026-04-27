@@ -4,9 +4,10 @@ import { TripLog } from "@/lib/types";
 interface TripLogsTableProps {
   logs: TripLog[];
   onEdit: (log: TripLog) => void;
+  onDelete: (log: TripLog) => void;
 }
 
-export function TripLogsTable({ logs, onEdit }: TripLogsTableProps) {
+export function TripLogsTable({ logs, onEdit, onDelete }: TripLogsTableProps) {
   return (
     <section className="overflow-hidden rounded-xl bg-white shadow-sm">
       <div className="overflow-x-auto">
@@ -41,13 +42,22 @@ export function TripLogsTable({ logs, onEdit }: TripLogsTableProps) {
                   <td className="px-3 py-2">{log.total_fuel_liters.toFixed(2)}</td>
                   <td className="px-3 py-2">{log.trip_duration_minutes} min</td>
                   <td className="px-3 py-2">
-                    <button
-                      type="button"
-                      onClick={() => onEdit(log)}
-                      className="bg-slate-200 text-slate-700 hover:bg-slate-300"
-                    >
-                      Edit
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onEdit(log)}
+                        className="bg-slate-200 text-slate-700 hover:bg-slate-300"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDelete(log)}
+                        className="bg-rose-100 text-rose-700 hover:bg-rose-200"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

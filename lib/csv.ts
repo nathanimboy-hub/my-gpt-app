@@ -1,13 +1,12 @@
 import { TripLog } from "./types";
 
-const columns: (keyof TripLog)[] = [
+const baseColumns: (keyof TripLog)[] = [
   "vessel_name",
   "route_direction",
   "scheduled_departure_time",
   "actual_departure_time",
   "actual_arrival_time",
   "passenger_count",
-  "ticket_sales_php",
   "cargo_count",
   "motorcycles_count",
   "cars_count",
@@ -28,7 +27,11 @@ const columnLabels: Partial<Record<keyof TripLog, string>> = {
   generator_fuel_liters: "Auxiliary Engine Fuel (L)"
 };
 
-export function toCsv(logs: TripLog[]): string {
+export function toCsv(logs: TripLog[], includeFinancials = true): string {
+  const columns: (keyof TripLog)[] = includeFinancials
+    ? [...baseColumns.slice(0, 6), "ticket_sales_php", ...baseColumns.slice(6)]
+    : baseColumns;
+
   const header = columns
     .map((column) => columnLabels[column] ?? column)
     .map((label) => `"${String(label).replace(/"/g, '""')}"`)

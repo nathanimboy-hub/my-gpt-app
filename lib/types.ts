@@ -1,5 +1,6 @@
 export type VesselName = "Lite Cat 1" | "Lite Cat 2";
 export type RouteDirection = "Cebu to Tubigon" | "Tubigon to Cebu";
+export type UserRole = "admin" | "employee";
 
 export interface TripLog {
   id: string;

@@ -277,7 +277,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <TripLogForm userId={userId} isAdmin={isAdmin} editingLog={editingLog} onSaved={handleSaved} />
+      <TripLogForm userId={userId} editingLog={editingLog} onSaved={handleSaved} />
 
       <div>
         <h2 className="mb-2 text-lg font-semibold">Trip Logs</h2>

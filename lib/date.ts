@@ -4,7 +4,11 @@ const asDate = (value: string | Date) => (value instanceof Date ? value : new Da
 
 export const formatDate = (value: string | Date) => {
   const date = asDate(value);
-  return `${pad(date.getMonth() + 1)}/${pad(date.getDate())}/${date.getFullYear()}`;
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  });
 };
 
 export const formatDateTime = (value: string | Date) => {

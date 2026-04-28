@@ -222,7 +222,7 @@ export default function DashboardPage() {
     }
 
     const confirmed = window.confirm(
-      `Delete trip log for ${log.vessel_name} (${formatDateTime(log.scheduled_departure_time)})?\nThis action cannot be undone.`
+      `Delete trip log for ${log.vessel_name} (${formatDate(log.scheduled_departure_time)})?\nThis action cannot be undone.`
     );
     if (!confirmed) {
       return;

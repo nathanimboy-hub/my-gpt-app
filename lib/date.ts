@@ -13,11 +13,17 @@ export const formatDate = (value: string | Date) => {
 
 export const formatDateTime = (value: string | Date) => {
   const date = asDate(value);
-  const hours = date.getHours();
-  const minutes = pad(date.getMinutes());
-  const period = hours >= 12 ? "PM" : "AM";
-  const hour12 = hours % 12 || 12;
-  return `${formatDate(date)} ${hour12}:${minutes} ${period}`;
+  return `${formatDate(date)}. ${formatTime24(date)}`;
+};
+
+export const formatTime24 = (value: string | Date) => {
+  const date = asDate(value);
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
+export const formatScheduledDeparture = (value: string | Date) => {
+  const date = asDate(value);
+  return `${formatDate(date)}. ${formatTime24(date)}`;
 };
 
 export const parseUsDateInput = (value: string) => {

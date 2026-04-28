@@ -9,7 +9,7 @@ import { toCsv } from "@/lib/csv";
 import { supabase } from "@/lib/supabase";
 import { getUserRole } from "@/lib/roles";
 import { TripLog, UserRole } from "@/lib/types";
-import { formatDate, formatDateTime, isoDateToUsInput, parseUsDateInput } from "@/lib/date";
+import { formatDate } from "@/lib/date";
 
 type DashboardTab = "employee" | "admin";
 
@@ -59,17 +59,15 @@ export default function DashboardPage() {
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
       const logDate = new Date(log.scheduled_departure_time);
-      const dateFrom = parseUsDateInput(dateFromInput);
-      if (dateFrom) {
-        const startDate = new Date(`${dateFrom}T00:00:00`);
+      if (dateFromInput) {
+        const startDate = new Date(`${dateFromInput}T00:00:00`);
         if (logDate < startDate) {
           return false;
         }
       }
 
-      const dateTo = parseUsDateInput(dateToInput);
-      if (dateTo) {
-        const endDate = new Date(`${dateTo}T23:59:59.999`);
+      if (dateToInput) {
+        const endDate = new Date(`${dateToInput}T23:59:59.999`);
         if (logDate > endDate) {
           return false;
         }
@@ -434,32 +432,18 @@ export default function DashboardPage() {
                   <label htmlFor="date-from-filter">Date From</label>
                   <input
                     id="date-from-filter"
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="MM/DD/YYYY"
-                    pattern="\d{1,2}/\d{1,2}/\d{4}"
+                    type="date"
                     value={dateFromInput}
                     onChange={(event) => setDateFromInput(event.target.value)}
-                    onBlur={(event) => {
-                      const isoDate = parseUsDateInput(event.target.value);
-                      setDateFromInput(isoDateToUsInput(isoDate));
-                    }}
                   />
                 </div>
                 <div>
                   <label htmlFor="date-to-filter">Date To</label>
                   <input
                     id="date-to-filter"
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="MM/DD/YYYY"
-                    pattern="\d{1,2}/\d{1,2}/\d{4}"
+                    type="date"
                     value={dateToInput}
                     onChange={(event) => setDateToInput(event.target.value)}
-                    onBlur={(event) => {
-                      const isoDate = parseUsDateInput(event.target.value);
-                      setDateToInput(isoDateToUsInput(isoDate));
-                    }}
                   />
                 </div>
                 <div>

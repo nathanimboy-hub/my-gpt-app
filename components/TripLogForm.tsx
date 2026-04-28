@@ -50,6 +50,7 @@ export function TripLogForm({
   const {
     register,
     handleSubmit,
+    setValue,
     watch,
     formState: { errors },
     reset
@@ -81,11 +82,57 @@ export function TripLogForm({
     });
   }, [editingLog, reset]);
 
+  const splitDateAndTime = (value: string) => {
+    if (!value) {
+      return { date: "", time: "" };
+    }
+
+    const date = new Date(value);
+    const timezoneOffset = date.getTimezoneOffset() * 60 * 1000;
+    const localDateTime = new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16);
+    const [datePart, timePart] = localDateTime.split("T");
+    return { date: datePart || "", time: timePart || "" };
+  };
+
+  const [scheduledDepartureDate, setScheduledDepartureDate] = useState("");
+  const [scheduledDepartureTime, setScheduledDepartureTime] = useState("");
+  const [actualArrivalDate, setActualArrivalDate] = useState("");
+  const [actualArrivalTime, setActualArrivalTime] = useState("");
+
+  useEffect(() => {
+    const scheduled = splitDateAndTime(editingLog?.scheduled_departure_time || "");
+    const arrival = splitDateAndTime(editingLog?.actual_arrival_time || "");
+
+    setScheduledDepartureDate(scheduled.date);
+    setScheduledDepartureTime(scheduled.time);
+    setActualArrivalDate(arrival.date);
+    setActualArrivalTime(arrival.time);
+  }, [editingLog]);
+
+  const toDateTimeValue = (date: string, time: string) => {
+    if (!date || !time) {
+      return "";
+    }
+    return `${date}T${time}`;
+  };
+
+  useEffect(() => {
+    setValue("scheduled_departure_time", toDateTimeValue(scheduledDepartureDate, scheduledDepartureTime), {
+      shouldValidate: true
+    });
+  }, [scheduledDepartureDate, scheduledDepartureTime, setValue]);
+
+  useEffect(() => {
+    setValue("actual_arrival_time", toDateTimeValue(actualArrivalDate, actualArrivalTime), {
+      shouldValidate: true
+    });
+  }, [actualArrivalDate, actualArrivalTime, setValue]);
+
   const fuelSteaming = watch("fuel_steaming_liters") || 0;
   const fuelManeuvering = watch("fuel_maneuvering_liters") || 0;
   const generatorFuel = watch("generator_fuel_liters") || 0;
-  const scheduledDeparture = watch("scheduled_departure_time");
-  const actualArrival = watch("actual_arrival_time");
+  const scheduledDeparture = toDateTimeValue(scheduledDepartureDate, scheduledDepartureTime);
+  const actualArrival = toDateTimeValue(actualArrivalDate, actualArrivalTime);
 
   const totalFuelLiters = useMemo(
     () => Number(fuelSteaming) + Number(fuelManeuvering) + Number(generatorFuel),
@@ -176,16 +223,42 @@ export function TripLogForm({
             {errors.passenger_count && <p className="mt-1 text-xs text-red-600">{errors.passenger_count.message}</p>}
           </div>
 
+          <input type="hidden" {...register("scheduled_departure_time")} />
+          <input type="hidden" {...register("actual_arrival_time")} />
+
           <div>
-            <label>Scheduled Departure</label>
-            <input type="datetime-local" lang="en-US" required {...register("scheduled_departure_time")} />
+            <label>Scheduled Departure Date</label>
+            <input
+              type="date"
+              required
+              value={scheduledDepartureDate}
+              onChange={(event) => setScheduledDepartureDate(event.target.value)}
+            />
             {errors.scheduled_departure_time && (
               <p className="mt-1 text-xs text-red-600">{errors.scheduled_departure_time.message}</p>
             )}
           </div>
           <div>
-            <label>Actual Arrival</label>
-            <input type="datetime-local" lang="en-US" required {...register("actual_arrival_time")} />
+            <label>Scheduled Departure Time (24-hour)</label>
+            <input
+              type="time"
+              required
+              step={60}
+              value={scheduledDepartureTime}
+              onChange={(event) => setScheduledDepartureTime(event.target.value)}
+            />
+            {errors.scheduled_departure_time && (
+              <p className="mt-1 text-xs text-red-600">{errors.scheduled_departure_time.message}</p>
+            )}
+          </div>
+          <div>
+            <label>Actual Arrival Date</label>
+            <input type="date" required value={actualArrivalDate} onChange={(event) => setActualArrivalDate(event.target.value)} />
+            {errors.actual_arrival_time && <p className="mt-1 text-xs text-red-600">{errors.actual_arrival_time.message}</p>}
+          </div>
+          <div>
+            <label>Actual Arrival Time (24-hour)</label>
+            <input type="time" required step={60} value={actualArrivalTime} onChange={(event) => setActualArrivalTime(event.target.value)} />
             {errors.actual_arrival_time && <p className="mt-1 text-xs text-red-600">{errors.actual_arrival_time.message}</p>}
           </div>
 

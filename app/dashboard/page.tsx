@@ -9,10 +9,15 @@ import { toCsv } from "@/lib/csv";
 import { supabase } from "@/lib/supabase";
 import { getUserRole } from "@/lib/roles";
 import { TripLog, UserRole } from "@/lib/types";
-import { formatDate } from "@/lib/date";
+import { formatDate, formatTime24 } from "@/lib/date";
 
 type DashboardTab = "employee" | "admin";
 const PAGE_SIZE = 50;
+
+const sortByScheduledDepartureDesc = (items: TripLog[]) =>
+  [...items].sort(
+    (a, b) => new Date(b.scheduled_departure_time).getTime() - new Date(a.scheduled_departure_time).getTime()
+  );
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -83,7 +88,7 @@ export default function DashboardPage() {
       setHasMoreLogs(false);
     } else {
       const incomingLogs = (data ?? []) as TripLog[];
-      setLogs((previousLogs) => (reset ? incomingLogs : [...previousLogs, ...incomingLogs]));
+      setLogs((previousLogs) => sortByScheduledDepartureDesc(reset ? incomingLogs : [...previousLogs, ...incomingLogs]));
       if (typeof count === "number") {
         setHasMoreLogs(start + incomingLogs.length < count);
       } else {
@@ -229,10 +234,7 @@ export default function DashboardPage() {
       return "No data available";
     }
 
-    return new Date(trip.scheduled_departure_time).toLocaleTimeString([], {
-      hour: "numeric",
-      minute: "2-digit"
-    });
+    return formatTime24(trip.scheduled_departure_time);
   };
 
   const clearFilters = () => {

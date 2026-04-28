@@ -19,11 +19,9 @@ const defaultFormValues: TripLogFormValues = {
   vessel_name: "Lite Cat 1",
   route_direction: "Cebu to Tubigon",
   scheduled_departure_time: "",
-  actual_departure_time: "",
   actual_arrival_time: "",
   passenger_count: 0,
   ticket_sales_php: 0,
-  cargo_count: 0,
   motorcycles_count: 0,
   cars_count: 0,
   trucks_count: 0,
@@ -70,11 +68,9 @@ export function TripLogForm({
       vessel_name: editingLog.vessel_name,
       route_direction: editingLog.route_direction,
       scheduled_departure_time: toDateTimeLocal(editingLog.scheduled_departure_time),
-      actual_departure_time: toDateTimeLocal(editingLog.actual_departure_time),
       actual_arrival_time: toDateTimeLocal(editingLog.actual_arrival_time),
       passenger_count: editingLog.passenger_count,
       ticket_sales_php: editingLog.ticket_sales_php,
-      cargo_count: editingLog.cargo_count,
       motorcycles_count: editingLog.motorcycles_count,
       cars_count: editingLog.cars_count,
       trucks_count: editingLog.trucks_count,
@@ -88,7 +84,7 @@ export function TripLogForm({
   const fuelSteaming = watch("fuel_steaming_liters") || 0;
   const fuelManeuvering = watch("fuel_maneuvering_liters") || 0;
   const generatorFuel = watch("generator_fuel_liters") || 0;
-  const actualDeparture = watch("actual_departure_time");
+  const scheduledDeparture = watch("scheduled_departure_time");
   const actualArrival = watch("actual_arrival_time");
 
   const totalFuelLiters = useMemo(
@@ -97,10 +93,10 @@ export function TripLogForm({
   );
 
   const tripDurationMinutes = useMemo(() => {
-    if (!actualDeparture || !actualArrival) return 0;
-    const diffMs = new Date(actualArrival).getTime() - new Date(actualDeparture).getTime();
+    if (!scheduledDeparture || !actualArrival) return 0;
+    const diffMs = new Date(actualArrival).getTime() - new Date(scheduledDeparture).getTime();
     return Math.max(Math.floor(diffMs / (1000 * 60)), 0);
-  }, [actualArrival, actualDeparture]);
+  }, [actualArrival, scheduledDeparture]);
 
   const onSubmit = async (data: TripLogFormValues) => {
     setSaving(true);
@@ -119,6 +115,8 @@ export function TripLogForm({
 
     const payload = {
       ...data,
+      actual_departure_time: data.scheduled_departure_time,
+      cargo_count: 0,
       notes: data.notes || null,
       total_fuel_liters: totalFuelLiters,
       trip_duration_minutes: tripDurationMinutes,
@@ -180,19 +178,14 @@ export function TripLogForm({
 
           <div>
             <label>Scheduled Departure</label>
-            <input type="datetime-local" required {...register("scheduled_departure_time")} />
+            <input type="datetime-local" lang="en-US" required {...register("scheduled_departure_time")} />
             {errors.scheduled_departure_time && (
               <p className="mt-1 text-xs text-red-600">{errors.scheduled_departure_time.message}</p>
             )}
           </div>
           <div>
-            <label>Actual Departure</label>
-            <input type="datetime-local" required {...register("actual_departure_time")} />
-            {errors.actual_departure_time && <p className="mt-1 text-xs text-red-600">{errors.actual_departure_time.message}</p>}
-          </div>
-          <div>
             <label>Actual Arrival</label>
-            <input type="datetime-local" required {...register("actual_arrival_time")} />
+            <input type="datetime-local" lang="en-US" required {...register("actual_arrival_time")} />
             {errors.actual_arrival_time && <p className="mt-1 text-xs text-red-600">{errors.actual_arrival_time.message}</p>}
           </div>
 
@@ -202,10 +195,6 @@ export function TripLogForm({
               <input type="number" min={0} step="0.01" {...register("ticket_sales_php")} />
             </div>
           )}
-          <div>
-            <label>Cargo Count</label>
-            <input type="number" min={0} {...register("cargo_count")} />
-          </div>
           <div>
             <label>Motorcycles</label>
             <input type="number" min={0} {...register("motorcycles_count")} />

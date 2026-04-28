@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { formatDateTime } from "@/lib/date";
 import { TripLog, UserRole } from "@/lib/types";
 
 interface TripLogsTableProps {
@@ -49,7 +49,7 @@ export function TripLogsTable({
                 return (
                   <tr key={log.id} className="border-t border-slate-100 hover:bg-slate-50/80">
                     <td className="whitespace-nowrap px-4 py-3">
-                      {format(new Date(log.scheduled_departure_time), "MM/dd/yyyy • h:mm a")}
+                      {formatDateTime(log.scheduled_departure_time)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-800">{log.vessel_name}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-slate-700">{log.route_direction}</td>

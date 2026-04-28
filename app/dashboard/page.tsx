@@ -9,19 +9,9 @@ import { toCsv } from "@/lib/csv";
 import { supabase } from "@/lib/supabase";
 import { getUserRole } from "@/lib/roles";
 import { TripLog, UserRole } from "@/lib/types";
+import { formatDate, formatDateTime, isoDateToUsInput, parseUsDateInput } from "@/lib/date";
 
 type DashboardTab = "employee" | "admin";
-const US_DATE_FORMAT: Intl.DateTimeFormatOptions = {
-  month: "2-digit",
-  day: "2-digit",
-  year: "numeric"
-};
-
-const US_DATE_TIME_FORMAT: Intl.DateTimeFormatOptions = {
-  ...US_DATE_FORMAT,
-  hour: "numeric",
-  minute: "2-digit"
-};
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -31,8 +21,8 @@ export default function DashboardPage() {
   const [userRole, setUserRole] = useState<UserRole>("employee");
   const [activeTab, setActiveTab] = useState<DashboardTab>("employee");
   const [editingLog, setEditingLog] = useState<TripLog | null>(null);
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [dateFromInput, setDateFromInput] = useState("");
+  const [dateToInput, setDateToInput] = useState("");
   const [vesselNameFilter, setVesselNameFilter] = useState("");
   const [routeDirectionFilter, setRouteDirectionFilter] = useState("");
 
@@ -69,6 +59,7 @@ export default function DashboardPage() {
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
       const logDate = new Date(log.scheduled_departure_time);
+      const dateFrom = parseUsDateInput(dateFromInput);
       if (dateFrom) {
         const startDate = new Date(`${dateFrom}T00:00:00`);
         if (logDate < startDate) {
@@ -76,6 +67,7 @@ export default function DashboardPage() {
         }
       }
 
+      const dateTo = parseUsDateInput(dateToInput);
       if (dateTo) {
         const endDate = new Date(`${dateTo}T23:59:59.999`);
         if (logDate > endDate) {
@@ -93,7 +85,7 @@ export default function DashboardPage() {
 
       return true;
     });
-  }, [dateFrom, dateTo, logs, routeDirectionFilter, vesselNameFilter]);
+  }, [dateFromInput, dateToInput, logs, routeDirectionFilter, vesselNameFilter]);
 
   const metrics = useMemo(() => {
     const totalTrips = filteredLogs.length;
@@ -183,7 +175,7 @@ export default function DashboardPage() {
       return "No trips in current filter";
     }
 
-    const tripDate = new Date(trip.scheduled_departure_time).toLocaleDateString("en-US", US_DATE_FORMAT);
+    const tripDate = formatDate(trip.scheduled_departure_time);
     return `${trip.vessel_name} • ${trip.route_direction} • ${tripDate}`;
   };
 
@@ -199,8 +191,8 @@ export default function DashboardPage() {
   };
 
   const clearFilters = () => {
-    setDateFrom("");
-    setDateTo("");
+    setDateFromInput("");
+    setDateToInput("");
     setVesselNameFilter("");
     setRouteDirectionFilter("");
   };
@@ -232,7 +224,7 @@ export default function DashboardPage() {
     }
 
     const confirmed = window.confirm(
-      `Delete trip log for ${log.vessel_name} (${new Date(log.scheduled_departure_time).toLocaleString("en-US", US_DATE_TIME_FORMAT)})?\nThis action cannot be undone.`
+      `Delete trip log for ${log.vessel_name} (${formatDateTime(log.scheduled_departure_time)})?\nThis action cannot be undone.`
     );
     if (!confirmed) {
       return;
@@ -442,20 +434,32 @@ export default function DashboardPage() {
                   <label htmlFor="date-from-filter">Date From</label>
                   <input
                     id="date-from-filter"
-                    type="date"
-                    lang="en-US"
-                    value={dateFrom}
-                    onChange={(event) => setDateFrom(event.target.value)}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="MM/DD/YYYY"
+                    pattern="\d{1,2}/\d{1,2}/\d{4}"
+                    value={dateFromInput}
+                    onChange={(event) => setDateFromInput(event.target.value)}
+                    onBlur={(event) => {
+                      const isoDate = parseUsDateInput(event.target.value);
+                      setDateFromInput(isoDateToUsInput(isoDate));
+                    }}
                   />
                 </div>
                 <div>
                   <label htmlFor="date-to-filter">Date To</label>
                   <input
                     id="date-to-filter"
-                    type="date"
-                    lang="en-US"
-                    value={dateTo}
-                    onChange={(event) => setDateTo(event.target.value)}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="MM/DD/YYYY"
+                    pattern="\d{1,2}/\d{1,2}/\d{4}"
+                    value={dateToInput}
+                    onChange={(event) => setDateToInput(event.target.value)}
+                    onBlur={(event) => {
+                      const isoDate = parseUsDateInput(event.target.value);
+                      setDateToInput(isoDateToUsInput(isoDate));
+                    }}
                   />
                 </div>
                 <div>

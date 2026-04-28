@@ -7,11 +7,9 @@ export interface TripLog {
   vessel_name: VesselName;
   route_direction: RouteDirection;
   scheduled_departure_time: string;
-  actual_departure_time: string;
   actual_arrival_time: string;
   passenger_count: number;
   ticket_sales_php: number;
-  cargo_count: number;
   motorcycles_count: number;
   cars_count: number;
   trucks_count: number;

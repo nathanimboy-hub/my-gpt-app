@@ -11,6 +11,17 @@ import { getUserRole } from "@/lib/roles";
 import { TripLog, UserRole } from "@/lib/types";
 
 type DashboardTab = "employee" | "admin";
+const US_DATE_FORMAT: Intl.DateTimeFormatOptions = {
+  month: "2-digit",
+  day: "2-digit",
+  year: "numeric"
+};
+
+const US_DATE_TIME_FORMAT: Intl.DateTimeFormatOptions = {
+  ...US_DATE_FORMAT,
+  hour: "numeric",
+  minute: "2-digit"
+};
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -172,7 +183,7 @@ export default function DashboardPage() {
       return "No trips in current filter";
     }
 
-    const tripDate = new Date(trip.scheduled_departure_time).toLocaleDateString();
+    const tripDate = new Date(trip.scheduled_departure_time).toLocaleDateString("en-US", US_DATE_FORMAT);
     return `${trip.vessel_name} • ${trip.route_direction} • ${tripDate}`;
   };
 
@@ -221,7 +232,7 @@ export default function DashboardPage() {
     }
 
     const confirmed = window.confirm(
-      `Delete trip log for ${log.vessel_name} (${new Date(log.scheduled_departure_time).toLocaleString()})?\nThis action cannot be undone.`
+      `Delete trip log for ${log.vessel_name} (${new Date(log.scheduled_departure_time).toLocaleString("en-US", US_DATE_TIME_FORMAT)})?\nThis action cannot be undone.`
     );
     if (!confirmed) {
       return;
@@ -432,13 +443,20 @@ export default function DashboardPage() {
                   <input
                     id="date-from-filter"
                     type="date"
+                    lang="en-US"
                     value={dateFrom}
                     onChange={(event) => setDateFrom(event.target.value)}
                   />
                 </div>
                 <div>
                   <label htmlFor="date-to-filter">Date To</label>
-                  <input id="date-to-filter" type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
+                  <input
+                    id="date-to-filter"
+                    type="date"
+                    lang="en-US"
+                    value={dateTo}
+                    onChange={(event) => setDateTo(event.target.value)}
+                  />
                 </div>
                 <div>
                   <label htmlFor="vessel-filter">Vessel Name</label>

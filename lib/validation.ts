@@ -29,11 +29,9 @@ export const tripLogSchema = z
     vessel_name: z.enum(["Lite Cat 1", "Lite Cat 2"]),
     route_direction: z.enum(["Cebu to Tubigon", "Tubigon to Cebu"]),
     scheduled_departure_time: requiredDateTime("Scheduled departure time"),
-    actual_departure_time: requiredDateTime("Actual departure time"),
     actual_arrival_time: requiredDateTime("Actual arrival time"),
     passenger_count: requiredNonNegativeNumber("Passenger count", true),
     ticket_sales_php: z.coerce.number().min(0),
-    cargo_count: z.coerce.number().int().min(0),
     motorcycles_count: z.coerce.number().int().min(0),
     cars_count: z.coerce.number().int().min(0),
     trucks_count: z.coerce.number().int().min(0),
@@ -43,9 +41,9 @@ export const tripLogSchema = z
     notes: z.string().optional()
   })
   .refine(
-    (data) => new Date(data.actual_arrival_time).getTime() > new Date(data.actual_departure_time).getTime(),
+    (data) => new Date(data.actual_arrival_time).getTime() > new Date(data.scheduled_departure_time).getTime(),
     {
-      message: "Actual arrival time must be after actual departure time",
+      message: "Actual arrival time must be after scheduled departure time",
       path: ["actual_arrival_time"]
     }
   );

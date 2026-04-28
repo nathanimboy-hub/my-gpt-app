@@ -6,6 +6,10 @@ interface TripLogsTableProps {
   showFinancials: boolean;
   currentUserId: string | null;
   userRole: UserRole;
+  loading?: boolean;
+  error?: string | null;
+  emptyTitle?: string;
+  emptyDescription?: string;
   onEdit: (log: TripLog) => void;
   onDelete: (log: TripLog) => void;
 }
@@ -15,6 +19,10 @@ export function TripLogsTable({
   showFinancials,
   currentUserId,
   userRole,
+  loading = false,
+  error = null,
+  emptyTitle = "No trip logs found",
+  emptyDescription = "Adjust filters or add a new trip log to get started.",
   onEdit,
   onDelete
 }: TripLogsTableProps) {
@@ -35,11 +43,25 @@ export function TripLogsTable({
             </tr>
           </thead>
           <tbody>
-            {logs.length === 0 ? (
+            {loading ? (
               <tr>
                 <td colSpan={showFinancials ? 8 : 7} className="px-4 py-14 text-center">
-                  <p className="font-medium text-slate-700">No trip logs found</p>
-                  <p className="mt-1 text-sm text-slate-500">Adjust filters or add a new trip log to get started.</p>
+                  <p className="font-medium text-slate-700">Loading trip logs...</p>
+                  <p className="mt-1 text-sm text-slate-500">Please wait while we fetch the latest records.</p>
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={showFinancials ? 8 : 7} className="px-4 py-14 text-center">
+                  <p className="font-medium text-rose-700">Failed to load trip logs</p>
+                  <p className="mt-1 text-sm text-slate-500">{error}</p>
+                </td>
+              </tr>
+            ) : logs.length === 0 ? (
+              <tr>
+                <td colSpan={showFinancials ? 8 : 7} className="px-4 py-14 text-center">
+                  <p className="font-medium text-slate-700">{emptyTitle}</p>
+                  <p className="mt-1 text-sm text-slate-500">{emptyDescription}</p>
                 </td>
               </tr>
             ) : (

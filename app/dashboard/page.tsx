@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { KpiCard } from "@/components/KpiCard";
 import { TripLogForm } from "@/components/TripLogForm";
@@ -12,12 +12,17 @@ import { TripLog, UserRole } from "@/lib/types";
 import { formatDate } from "@/lib/date";
 
 type DashboardTab = "employee" | "admin";
+const PAGE_SIZE = 50;
 
 export default function DashboardPage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [logs, setLogs] = useState<TripLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [logsError, setLogsError] = useState<string | null>(null);
+  const [hasMoreLogs, setHasMoreLogs] = useState(false);
   const [userRole, setUserRole] = useState<UserRole>("employee");
   const [activeTab, setActiveTab] = useState<DashboardTab>("employee");
   const [editingLog, setEditingLog] = useState<TripLog | null>(null);
@@ -26,18 +31,73 @@ export default function DashboardPage() {
   const [vesselNameFilter, setVesselNameFilter] = useState("");
   const [routeDirectionFilter, setRouteDirectionFilter] = useState("");
 
-  const loadLogs = async () => {
-    const { data, error } = await supabase
-      .from("trip_logs")
-      .select("*")
-      .order("scheduled_departure_time", { ascending: false });
+  const hasActiveFilters = useMemo(
+    () => Boolean(dateFromInput || dateToInput || vesselNameFilter || routeDirectionFilter),
+    [dateFromInput, dateToInput, routeDirectionFilter, vesselNameFilter]
+  );
 
-    if (!error && data) {
-      setLogs(data as TripLog[]);
+  const buildLogQuery = useCallback((start: number, end: number) => {
+    let query = supabase
+      .from("trip_logs")
+      .select("*", { count: "exact" })
+      .order("scheduled_departure_time", { ascending: false })
+      .range(start, end);
+
+    if (dateFromInput) {
+      query = query.gte("scheduled_departure_time", `${dateFromInput}T00:00:00`);
     }
 
+    if (dateToInput) {
+      query = query.lte("scheduled_departure_time", `${dateToInput}T23:59:59.999`);
+    }
+
+    if (vesselNameFilter) {
+      query = query.eq("vessel_name", vesselNameFilter);
+    }
+
+    if (routeDirectionFilter) {
+      query = query.eq("route_direction", routeDirectionFilter);
+    }
+
+    return query;
+  }, [dateFromInput, dateToInput, routeDirectionFilter, vesselNameFilter]);
+
+  const loadLogs = useCallback(async (reset = false) => {
+    const start = reset ? 0 : logs.length;
+    const end = start + PAGE_SIZE - 1;
+
+    if (reset) {
+      setLogsLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+    setLogsError(null);
+
+    const { data, error, count } = await buildLogQuery(start, end);
+
+    if (error) {
+      setLogsError(error.message || "Please try again.");
+      if (reset) {
+        setLogs([]);
+      }
+      setHasMoreLogs(false);
+    } else {
+      const incomingLogs = (data ?? []) as TripLog[];
+      setLogs((previousLogs) => (reset ? incomingLogs : [...previousLogs, ...incomingLogs]));
+      if (typeof count === "number") {
+        setHasMoreLogs(start + incomingLogs.length < count);
+      } else {
+        setHasMoreLogs(incomingLogs.length === PAGE_SIZE);
+      }
+    }
+
+    if (reset) {
+      setLogsLoading(false);
+    } else {
+      setLoadingMore(false);
+    }
     setLoading(false);
-  };
+  }, [buildLogQuery, logs.length]);
 
   useEffect(() => {
     const setup = async () => {
@@ -50,123 +110,110 @@ export default function DashboardPage() {
       const role = getUserRole(data.user);
       setUserRole(role);
       setActiveTab(role === "admin" ? "admin" : "employee");
-      await loadLogs();
     };
 
     void setup();
   }, [router]);
 
-  const filteredLogs = useMemo(() => {
-    return logs.filter((log) => {
-      const logDate = new Date(log.scheduled_departure_time);
-      if (dateFromInput) {
-        const startDate = new Date(`${dateFromInput}T00:00:00`);
-        if (logDate < startDate) {
-          return false;
-        }
-      }
+  useEffect(() => {
+    if (!userId) {
+      return;
+    }
 
-      if (dateToInput) {
-        const endDate = new Date(`${dateToInput}T23:59:59.999`);
-        if (logDate > endDate) {
-          return false;
-        }
-      }
-
-      if (vesselNameFilter && log.vessel_name !== vesselNameFilter) {
-        return false;
-      }
-
-      if (routeDirectionFilter && log.route_direction !== routeDirectionFilter) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [dateFromInput, dateToInput, logs, routeDirectionFilter, vesselNameFilter]);
-
-  const metrics = useMemo(() => {
-    const totalTrips = filteredLogs.length;
-    const totalPassengers = filteredLogs.reduce((sum, log) => sum + log.passenger_count, 0);
-    const totalTicketSales = filteredLogs.reduce((sum, log) => sum + Number(log.ticket_sales_php), 0);
-    const totalFuelUsed = filteredLogs.reduce((sum, log) => sum + Number(log.total_fuel_liters), 0);
-    const totalVehicles = filteredLogs.reduce(
-      (sum, log) => sum + log.motorcycles_count + log.cars_count + log.trucks_count,
-      0
-    );
-
-    return {
-      totalTrips,
-      totalPassengers,
-      totalTicketSales,
-      totalFuelUsed,
-      averageFuelPerTrip: totalTrips ? totalFuelUsed / totalTrips : 0,
-      fuelPerPassengerRatio: totalPassengers ? totalFuelUsed / totalPassengers : 0,
-      fuelPerVehicleRatio: totalVehicles ? totalFuelUsed / totalVehicles : 0
-    };
-  }, [filteredLogs]);
+    void loadLogs(true);
+  }, [loadLogs, userId]);
 
   const isAdmin = userRole === "admin";
 
-  const analyticsSummary = useMemo(() => {
-    const totalTrips = filteredLogs.length;
-    const totalRevenue = filteredLogs.reduce((sum, log) => sum + Number(log.ticket_sales_php), 0);
-    const totalFuelUsed = filteredLogs.reduce((sum, log) => sum + Number(log.total_fuel_liters), 0);
-    const totalPassengers = filteredLogs.reduce((sum, log) => sum + Number(log.passenger_count), 0);
+  const dashboardStats = useMemo(() => {
+    return logs.reduce(
+      (stats, log) => {
+        const ticketSales = Number(log.ticket_sales_php);
+        const fuelLiters = Number(log.total_fuel_liters);
+        const passengers = Number(log.passenger_count);
+        const totalVehicles = Number(log.motorcycles_count) + Number(log.cars_count) + Number(log.trucks_count);
 
-    const highestFuelTrip = filteredLogs.reduce<TripLog | null>((highest, current) => {
-      if (!highest) {
-        return current;
+        stats.totalTrips += 1;
+        stats.totalPassengers += passengers;
+        stats.totalTicketSales += ticketSales;
+        stats.totalFuelUsed += fuelLiters;
+        stats.totalVehicles += totalVehicles;
+
+        if (!stats.highestFuelTrip || fuelLiters > Number(stats.highestFuelTrip.total_fuel_liters)) {
+          stats.highestFuelTrip = log;
+        }
+
+        if (!stats.lowestFuelTrip || fuelLiters < Number(stats.lowestFuelTrip.total_fuel_liters)) {
+          stats.lowestFuelTrip = log;
+        }
+
+        if (!stats.lowestPassengerTrip || passengers < Number(stats.lowestPassengerTrip.passenger_count)) {
+          stats.lowestPassengerTrip = log;
+        }
+
+        if (!stats.highestFuelUsageTrip || fuelLiters > Number(stats.highestFuelUsageTrip.total_fuel_liters)) {
+          stats.highestFuelUsageTrip = log;
+        }
+
+        return stats;
+      },
+      {
+        totalTrips: 0,
+        totalPassengers: 0,
+        totalTicketSales: 0,
+        totalFuelUsed: 0,
+        totalVehicles: 0,
+        highestFuelTrip: null as TripLog | null,
+        lowestFuelTrip: null as TripLog | null,
+        lowestPassengerTrip: null as TripLog | null,
+        highestFuelUsageTrip: null as TripLog | null
       }
-      return Number(current.total_fuel_liters) > Number(highest.total_fuel_liters) ? current : highest;
-    }, null);
+    );
+  }, [logs]);
 
-    const lowestFuelTrip = filteredLogs.reduce<TripLog | null>((lowest, current) => {
-      if (!lowest) {
-        return current;
-      }
-      return Number(current.total_fuel_liters) < Number(lowest.total_fuel_liters) ? current : lowest;
-    }, null);
+  const metrics = useMemo(
+    () => ({
+      totalTrips: dashboardStats.totalTrips,
+      totalPassengers: dashboardStats.totalPassengers,
+      totalTicketSales: dashboardStats.totalTicketSales,
+      totalFuelUsed: dashboardStats.totalFuelUsed,
+      averageFuelPerTrip: dashboardStats.totalTrips ? dashboardStats.totalFuelUsed / dashboardStats.totalTrips : 0,
+      fuelPerPassengerRatio: dashboardStats.totalPassengers
+        ? dashboardStats.totalFuelUsed / dashboardStats.totalPassengers
+        : 0,
+      fuelPerVehicleRatio: dashboardStats.totalVehicles ? dashboardStats.totalFuelUsed / dashboardStats.totalVehicles : 0
+    }),
+    [dashboardStats]
+  );
 
-    return {
-      totalRevenue,
-      totalFuelUsed,
-      averageFuelPerTrip: totalTrips ? totalFuelUsed / totalTrips : 0,
-      averageRevenuePerTrip: totalTrips ? totalRevenue / totalTrips : 0,
-      fuelPerPassenger: totalPassengers ? totalFuelUsed / totalPassengers : 0,
-      highestFuelTrip,
-      lowestFuelTrip
-    };
-  }, [filteredLogs]);
+  const analyticsSummary = useMemo(
+    () => ({
+      totalRevenue: dashboardStats.totalTicketSales,
+      totalFuelUsed: dashboardStats.totalFuelUsed,
+      averageFuelPerTrip: dashboardStats.totalTrips ? dashboardStats.totalFuelUsed / dashboardStats.totalTrips : 0,
+      averageRevenuePerTrip: dashboardStats.totalTrips ? dashboardStats.totalTicketSales / dashboardStats.totalTrips : 0,
+      fuelPerPassenger: dashboardStats.totalPassengers
+        ? dashboardStats.totalFuelUsed / dashboardStats.totalPassengers
+        : 0,
+      highestFuelTrip: dashboardStats.highestFuelTrip,
+      lowestFuelTrip: dashboardStats.lowestFuelTrip
+    }),
+    [dashboardStats]
+  );
 
-  const summaryInsights = useMemo(() => {
-    const totalTrips = filteredLogs.length;
-    const totalPassengers = filteredLogs.reduce((sum, log) => sum + Number(log.passenger_count), 0);
-    const totalFuelUsed = filteredLogs.reduce((sum, log) => sum + Number(log.total_fuel_liters), 0);
-
-    const lowestPassengerTrip = filteredLogs.reduce<TripLog | null>((lowest, current) => {
-      if (!lowest) {
-        return current;
-      }
-      return Number(current.passenger_count) < Number(lowest.passenger_count) ? current : lowest;
-    }, null);
-
-    const highestFuelUsageTrip = filteredLogs.reduce<TripLog | null>((highest, current) => {
-      if (!highest) {
-        return current;
-      }
-      return Number(current.total_fuel_liters) > Number(highest.total_fuel_liters) ? current : highest;
-    }, null);
-
-    return {
-      totalTrips,
-      totalPassengers,
-      averagePassengersPerTrip: totalTrips ? totalPassengers / totalTrips : 0,
-      averageFuelUsedPerTrip: totalTrips ? totalFuelUsed / totalTrips : 0,
-      lowestPassengerTrip,
-      highestFuelUsageTrip
-    };
-  }, [filteredLogs]);
+  const summaryInsights = useMemo(
+    () => ({
+      totalTrips: dashboardStats.totalTrips,
+      totalPassengers: dashboardStats.totalPassengers,
+      averagePassengersPerTrip: dashboardStats.totalTrips
+        ? dashboardStats.totalPassengers / dashboardStats.totalTrips
+        : 0,
+      averageFuelUsedPerTrip: dashboardStats.totalTrips ? dashboardStats.totalFuelUsed / dashboardStats.totalTrips : 0,
+      lowestPassengerTrip: dashboardStats.lowestPassengerTrip,
+      highestFuelUsageTrip: dashboardStats.highestFuelUsageTrip
+    }),
+    [dashboardStats]
+  );
 
   const formatTripLabel = (trip: TripLog | null) => {
     if (!trip) {
@@ -212,7 +259,7 @@ export default function DashboardPage() {
   };
 
   const handleSaved = async () => {
-    await loadLogs();
+    await loadLogs(true);
     setEditingLog(null);
   };
 
@@ -239,7 +286,7 @@ export default function DashboardPage() {
       if (editingLog?.id === log.id) {
         setEditingLog(null);
       }
-      await loadLogs();
+      await loadLogs(true);
     }
   };
 
@@ -424,6 +471,11 @@ export default function DashboardPage() {
             <div>
               <h2 className="text-lg font-semibold text-slate-900">Trip Logs</h2>
               <p className="text-sm text-slate-500">Filter and review operational logs across vessels and routes.</p>
+              {hasActiveFilters ? (
+                <p className="mt-1 text-xs font-medium text-blue-700">Showing filtered results (newest first).</p>
+              ) : (
+                <p className="mt-1 text-xs font-medium text-slate-500">Showing latest {PAGE_SIZE} logs by default.</p>
+              )}
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -483,13 +535,35 @@ export default function DashboardPage() {
             </div>
 
             <TripLogsTable
-              logs={filteredLogs}
+              logs={logs}
               showFinancials={true}
               currentUserId={userId}
               userRole={userRole}
+              loading={logsLoading}
+              error={logsError}
+              emptyTitle={hasActiveFilters ? "No matching trip logs found" : "No trip logs found"}
+              emptyDescription={
+                hasActiveFilters
+                  ? "Try adjusting date, vessel, or route filters."
+                  : "Add a new trip log to get started."
+              }
               onEdit={setEditingLog}
               onDelete={handleDelete}
             />
+            <div className="flex justify-center">
+              {hasMoreLogs ? (
+                <button
+                  type="button"
+                  onClick={() => void loadLogs(false)}
+                  disabled={loadingMore || logsLoading}
+                  className="border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loadingMore ? "Loading..." : `Load More (${PAGE_SIZE})`}
+                </button>
+              ) : (
+                !logsLoading && <p className="text-sm text-slate-500">You&apos;ve reached the end of the current results.</p>
+              )}
+            </div>
           </section>
         </>
       ) : (
@@ -518,9 +592,27 @@ export default function DashboardPage() {
               showFinancials={false}
               currentUserId={userId}
               userRole={userRole}
+              loading={logsLoading}
+              error={logsError}
+              emptyTitle="No trip logs available yet"
+              emptyDescription="Latest logs will appear here once entries are submitted."
               onEdit={setEditingLog}
               onDelete={handleDelete}
             />
+            <div className="flex justify-center">
+              {hasMoreLogs ? (
+                <button
+                  type="button"
+                  onClick={() => void loadLogs(false)}
+                  disabled={loadingMore || logsLoading}
+                  className="border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loadingMore ? "Loading..." : `Load More (${PAGE_SIZE})`}
+                </button>
+              ) : (
+                !logsLoading && <p className="text-sm text-slate-500">You&apos;ve reached the latest available trip logs.</p>
+              )}
+            </div>
           </section>
         </>
       )}

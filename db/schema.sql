@@ -44,8 +44,22 @@ create policy "admins can delete any trip logs, employees can delete own"
   for delete
   using (
     auth.uid() = created_by
+    or (auth.jwt() ->> 'role') = 'admin'
     or (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
-    or (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+  );
+
+create policy "admins can update any trip logs, employees can update own"
+  on public.trip_logs
+  for update
+  using (
+    auth.uid() = created_by
+    or (auth.jwt() ->> 'role') = 'admin'
+    or (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+  )
+  with check (
+    auth.uid() = created_by
+    or (auth.jwt() ->> 'role') = 'admin'
+    or (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
   );
 
 -- Ensure new users always get the employee role by default.

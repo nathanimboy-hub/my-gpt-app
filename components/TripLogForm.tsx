@@ -113,29 +113,28 @@ export function TripLogForm({
       ownerId = authData.user.id;
     }
 
-    const payload = {
+    const updatedData = {
       ...data,
       actual_departure_time: data.scheduled_departure_time,
       cargo_count: 0,
       notes: data.notes || null,
-      total_fuel_liters: totalFuelLiters,
-      trip_duration_minutes: tripDurationMinutes,
       created_by: ownerId
     };
 
     let query;
     if (editingLog) {
-      query = supabase.from("trip_logs").update(payload).eq("id", editingLog.id);
+      query = supabase.from("trip_logs").update(updatedData).eq("id", editingLog.id);
       if (!canManageAllLogs) {
         query = query.eq("created_by", ownerId);
       }
     } else {
-      query = supabase.from("trip_logs").insert(payload);
+      query = supabase.from("trip_logs").insert(updatedData);
     }
 
     const { error } = await query;
 
     if (error) {
+      console.error("Failed to save trip log", error);
       setSubmitError(error.message);
       setSaving(false);
       return;

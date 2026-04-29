@@ -285,6 +285,7 @@ export default function DashboardPage() {
     const { error } = await deleteQuery;
 
     if (error) {
+      console.error("Failed to delete trip log", error);
       setLogsError(`Delete failed: ${error.message}`);
       return;
     }

@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { TripLog } from "@/lib/types";
 import { TripLogFormValues, tripLogSchema } from "@/lib/validation";
 import { formatFixed } from "@/lib/number";
+import { formatForDateTimeInput, parseLocalDateTimeInput } from "@/lib/date";
 
 interface TripLogFormProps {
   userId: string | null;
@@ -30,12 +31,6 @@ const defaultFormValues: TripLogFormValues = {
   fuel_maneuvering_liters: 0,
   generator_fuel_liters: 0,
   notes: ""
-};
-
-const toDateTimeLocal = (value: string) => {
-  const date = new Date(value);
-  const timezoneOffset = date.getTimezoneOffset() * 60 * 1000;
-  return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16);
 };
 
 export function TripLogForm({
@@ -68,8 +63,8 @@ export function TripLogForm({
     reset({
       vessel_name: editingLog.vessel_name,
       route_direction: editingLog.route_direction,
-      scheduled_departure_time: toDateTimeLocal(editingLog.scheduled_departure_time),
-      actual_arrival_time: toDateTimeLocal(editingLog.actual_arrival_time),
+      scheduled_departure_time: formatForDateTimeInput(editingLog.scheduled_departure_time),
+      actual_arrival_time: formatForDateTimeInput(editingLog.actual_arrival_time),
       passenger_count: editingLog.passenger_count,
       ticket_sales_php: editingLog.ticket_sales_php,
       motorcycles_count: editingLog.motorcycles_count,
@@ -103,68 +98,72 @@ export function TripLogForm({
     setSaving(true);
     setSubmitError(null);
 
-    const departureDate = new Date(data.scheduled_departure_time);
-    const arrivalDate = new Date(data.actual_arrival_time);
-    const fuelInputs = [data.fuel_steaming_liters, data.fuel_maneuvering_liters, data.generator_fuel_liters];
+    try {
+      const departureDate = parseLocalDateTimeInput(data.scheduled_departure_time);
+      const arrivalDate = parseLocalDateTimeInput(data.actual_arrival_time);
+      const fuelInputs = [data.fuel_steaming_liters, data.fuel_maneuvering_liters, data.generator_fuel_liters];
 
-    if (
-      Number.isNaN(departureDate.getTime()) ||
-      Number.isNaN(arrivalDate.getTime()) ||
-      arrivalDate.getTime() <= departureDate.getTime()
-    ) {
-      setSubmitError("Please provide a valid departure and arrival time (arrival must be later than departure).");
-      setSaving(false);
-      return;
-    }
-
-    if (fuelInputs.some((value) => value === null || value === undefined || Number.isNaN(Number(value)))) {
-      setSubmitError("Please provide valid fuel values before saving.");
-      setSaving(false);
-      return;
-    }
-
-    let ownerId = userId;
-    if (!ownerId) {
-      const { data: authData, error: authError } = await supabase.auth.getUser();
-      if (authError || !authData.user?.id) {
-        setSubmitError("Unable to verify your user account. Please sign in again.");
+      if (!departureDate || !arrivalDate || arrivalDate.getTime() <= departureDate.getTime()) {
+        setSubmitError("Please provide a valid departure and arrival time (arrival must be later than departure).");
         setSaving(false);
         return;
       }
-      ownerId = authData.user.id;
-    }
 
-    const updatedData = {
-      ...data,
-      scheduled_departure_time: departureDate.toISOString(),
-      actual_departure_time: departureDate.toISOString(),
-      actual_arrival_time: arrivalDate.toISOString(),
-      cargo_count: 0,
-      notes: data.notes || null,
-      created_by: ownerId
-    };
-
-    let query;
-    if (editingLog) {
-      query = supabase.from("trip_logs").update(updatedData).eq("id", editingLog.id);
-      if (!canManageAllLogs) {
-        query = query.eq("created_by", ownerId);
+      if (fuelInputs.some((value) => value === null || value === undefined || Number.isNaN(Number(value)))) {
+        setSubmitError("Please provide valid fuel values before saving.");
+        setSaving(false);
+        return;
       }
-    } else {
-      query = supabase.from("trip_logs").insert(updatedData);
-    }
 
-    const { error } = await query;
+      let ownerId = userId;
+      if (!ownerId) {
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        if (authError || !authData.user?.id) {
+          setSubmitError("Unable to verify your user account. Please sign in again.");
+          setSaving(false);
+          return;
+        }
+        ownerId = authData.user.id;
+      }
 
-    if (error) {
-      console.error("Failed to save trip log", error);
-      setSubmitError(error.message);
+      const updatedData = {
+        ...data,
+        scheduled_departure_time: data.scheduled_departure_time,
+        actual_departure_time: data.scheduled_departure_time,
+        actual_arrival_time: data.actual_arrival_time,
+        total_fuel_liters: totalFuelLiters,
+        trip_duration_minutes: tripDurationMinutes,
+        cargo_count: 0,
+        notes: data.notes || null,
+        created_by: ownerId
+      };
+
+      let query;
+      if (editingLog) {
+        query = supabase.from("trip_logs").update(updatedData).eq("id", editingLog.id);
+        if (!canManageAllLogs) {
+          query = query.eq("created_by", ownerId);
+        }
+      } else {
+        query = supabase.from("trip_logs").insert(updatedData);
+      }
+
+      const { error } = await query;
+
+      if (error) {
+        console.error("Failed to save trip log", error);
+        setSubmitError(error.message);
+        setSaving(false);
+        return;
+      }
+
+      await onSaved();
       setSaving(false);
-      return;
+    } catch (error) {
+      console.error("Unexpected error while saving trip log", error);
+      setSubmitError("Unable to save this trip log right now. Please try again.");
+      setSaving(false);
     }
-
-    await onSaved();
-    setSaving(false);
   };
 
   const isEditing = Boolean(editingLog);

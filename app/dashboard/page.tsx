@@ -79,21 +79,30 @@ export default function DashboardPage() {
     }
     setLogsError(null);
 
-    const { data, error, count } = await buildLogQuery(start, end);
+    try {
+      const { data, error, count } = await buildLogQuery(start, end);
 
-    if (error) {
-      setLogsError(error.message || "Please try again.");
+      if (error) {
+        setLogsError(error.message || "Please try again.");
+        if (reset) {
+          setLogs([]);
+        }
+        setHasMoreLogs(false);
+      } else {
+        const incomingLogs = (data ?? []) as TripLog[];
+        setLogs((previousLogs) => sortByScheduledDepartureDesc(reset ? incomingLogs : [...previousLogs, ...incomingLogs]));
+        if (typeof count === "number") {
+          setHasMoreLogs(start + incomingLogs.length < count);
+        } else {
+          setHasMoreLogs(incomingLogs.length === PAGE_SIZE);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load trip logs", error);
+      setLogsError("Unable to load trip logs right now. Please refresh and try again.");
+      setHasMoreLogs(false);
       if (reset) {
         setLogs([]);
-      }
-      setHasMoreLogs(false);
-    } else {
-      const incomingLogs = (data ?? []) as TripLog[];
-      setLogs((previousLogs) => sortByScheduledDepartureDesc(reset ? incomingLogs : [...previousLogs, ...incomingLogs]));
-      if (typeof count === "number") {
-        setHasMoreLogs(start + incomingLogs.length < count);
-      } else {
-        setHasMoreLogs(incomingLogs.length === PAGE_SIZE);
       }
     }
 
@@ -278,24 +287,29 @@ export default function DashboardPage() {
       return;
     }
 
-    let deleteQuery = supabase.from("trip_logs").delete().eq("id", log.id);
-    if (!isAdmin) {
-      deleteQuery = deleteQuery.eq("created_by", userId);
-    }
+    try {
+      let deleteQuery = supabase.from("trip_logs").delete().eq("id", log.id);
+      if (!isAdmin) {
+        deleteQuery = deleteQuery.eq("created_by", userId);
+      }
 
-    const { error } = await deleteQuery;
+      const { error } = await deleteQuery;
 
-    if (error) {
-      console.error("Failed to delete trip log", error);
-      setLogsError(`Delete failed: ${error.message}`);
-      return;
-    }
+      if (error) {
+        console.error("Failed to delete trip log", error);
+        setLogsError(`Delete failed: ${error.message}`);
+        return;
+      }
 
-    setLogsError(null);
-    if (editingLog?.id === log.id) {
-      setEditingLog(null);
+      setLogsError(null);
+      if (editingLog?.id === log.id) {
+        setEditingLog(null);
+      }
+      await loadLogs(true);
+    } catch (error) {
+      console.error("Unexpected delete error", error);
+      setLogsError("Unable to delete trip log right now. Please try again.");
     }
-    await loadLogs(true);
   };
 
   if (loading) {

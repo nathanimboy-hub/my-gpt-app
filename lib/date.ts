@@ -2,6 +2,39 @@ const pad = (value: number) => value.toString().padStart(2, "0");
 
 const asDate = (value: string | Date) => (value instanceof Date ? value : new Date(value));
 
+export const parseLocalDateTimeInput = (value: string) => {
+  const trimmed = value.trim();
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(trimmed);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const hour = Number(match[4]);
+  const minute = Number(match[5]);
+
+  const date = new Date(year, month - 1, day, hour, minute, 0, 0);
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day ||
+    date.getHours() !== hour ||
+    date.getMinutes() !== minute
+  ) {
+    return null;
+  }
+
+  return date;
+};
+
+export const formatForDateTimeInput = (value: string | Date) => {
+  const date = asDate(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(
+    date.getMinutes()
+  )}`;
+};
+
 export const formatDate = (value: string | Date) => {
   const date = asDate(value);
   return date.toLocaleDateString("en-US", {

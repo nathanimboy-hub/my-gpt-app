@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseLocalDateTimeInput } from "@/lib/date";
 
 const requiredDateTime = (label: string) =>
   z.string().trim().min(1, `${label} is required`);
@@ -41,7 +42,11 @@ export const tripLogSchema = z
     notes: z.string().optional()
   })
   .refine(
-    (data) => new Date(data.actual_arrival_time).getTime() > new Date(data.scheduled_departure_time).getTime(),
+    (data) => {
+      const scheduled = parseLocalDateTimeInput(data.scheduled_departure_time);
+      const arrival = parseLocalDateTimeInput(data.actual_arrival_time);
+      return Boolean(scheduled && arrival && arrival.getTime() > scheduled.getTime());
+    },
     {
       message: "Actual arrival time must be after scheduled departure time",
       path: ["actual_arrival_time"]

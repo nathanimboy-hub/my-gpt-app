@@ -27,6 +27,38 @@ export function TripLogsTable({
   onEdit,
   onDelete
 }: TripLogsTableProps) {
+  const getFuelDisplay = (log: TripLog) => {
+    const totalFuel = log.total_fuel_liters;
+    if (totalFuel !== null && totalFuel !== undefined && Number.isFinite(Number(totalFuel))) {
+      return `${formatFixed(totalFuel, 2)} L`;
+    }
+
+    const fuelValues = [log.fuel_steaming_liters, log.fuel_maneuvering_liters, log.generator_fuel_liters];
+    const hasMissingFuel = fuelValues.some((value) => value === null || value === undefined || !Number.isFinite(Number(value)));
+    if (hasMissingFuel) {
+      return "Missing";
+    }
+
+    const computedTotalFuel = fuelValues.reduce((sum, value) => sum + Number(value), 0);
+    return `${formatFixed(computedTotalFuel, 2)} L`;
+  };
+
+  const getDurationDisplay = (log: TripLog) => {
+    const storedDuration = log.trip_duration_minutes;
+    if (storedDuration !== null && storedDuration !== undefined && Number.isFinite(Number(storedDuration))) {
+      return `${formatLocaleNumber(storedDuration)} min`;
+    }
+
+    const departureMs = new Date(log.scheduled_departure_time).getTime();
+    const arrivalMs = new Date(log.actual_arrival_time).getTime();
+    if (!Number.isFinite(departureMs) || !Number.isFinite(arrivalMs) || arrivalMs < departureMs) {
+      return "N/A";
+    }
+
+    const minutes = Math.floor((arrivalMs - departureMs) / (1000 * 60));
+    return `${formatLocaleNumber(minutes)} min`;
+  };
+
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
@@ -78,8 +110,8 @@ export function TripLogsTable({
                     <td className="whitespace-nowrap px-4 py-3 text-slate-700">{log.route_direction}</td>
                     <td className="whitespace-nowrap px-4 py-3">{formatLocaleNumber(log.passenger_count)}</td>
                     {showFinancials && <td className="whitespace-nowrap px-4 py-3">₱{formatLocaleNumber(log.ticket_sales_php)}</td>}
-                    <td className="whitespace-nowrap px-4 py-3">{formatFixed(log.total_fuel_liters, 2)}</td>
-                    <td className="whitespace-nowrap px-4 py-3">{formatLocaleNumber(log.trip_duration_minutes)} min</td>
+                    <td className="whitespace-nowrap px-4 py-3">{getFuelDisplay(log)}</td>
+                    <td className="whitespace-nowrap px-4 py-3">{getDurationDisplay(log)}</td>
                     <td className="px-4 py-3">
                       {canManage ? (
                         <div className="flex justify-end gap-2">

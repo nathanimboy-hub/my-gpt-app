@@ -284,12 +284,16 @@ export default function DashboardPage() {
 
     const { error } = await deleteQuery;
 
-    if (!error) {
-      if (editingLog?.id === log.id) {
-        setEditingLog(null);
-      }
-      await loadLogs(true);
+    if (error) {
+      setLogsError(`Delete failed: ${error.message}`);
+      return;
     }
+
+    setLogsError(null);
+    if (editingLog?.id === log.id) {
+      setEditingLog(null);
+    }
+    await loadLogs(true);
   };
 
   if (loading) {

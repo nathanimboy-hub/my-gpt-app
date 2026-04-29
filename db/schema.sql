@@ -39,6 +39,15 @@ create policy "users can insert own trip logs"
   for insert
   with check (auth.uid() = created_by);
 
+create policy "admins can delete any trip logs, employees can delete own"
+  on public.trip_logs
+  for delete
+  using (
+    auth.uid() = created_by
+    or (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+    or (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+  );
+
 -- Ensure new users always get the employee role by default.
 create or replace function public.set_default_user_role()
 returns trigger

@@ -103,6 +103,26 @@ export function TripLogForm({
     setSaving(true);
     setSubmitError(null);
 
+    const departureDate = new Date(data.scheduled_departure_time);
+    const arrivalDate = new Date(data.actual_arrival_time);
+    const fuelInputs = [data.fuel_steaming_liters, data.fuel_maneuvering_liters, data.generator_fuel_liters];
+
+    if (
+      Number.isNaN(departureDate.getTime()) ||
+      Number.isNaN(arrivalDate.getTime()) ||
+      arrivalDate.getTime() <= departureDate.getTime()
+    ) {
+      setSubmitError("Please provide a valid departure and arrival time (arrival must be later than departure).");
+      setSaving(false);
+      return;
+    }
+
+    if (fuelInputs.some((value) => value === null || value === undefined || Number.isNaN(Number(value)))) {
+      setSubmitError("Please provide valid fuel values before saving.");
+      setSaving(false);
+      return;
+    }
+
     let ownerId = userId;
     if (!ownerId) {
       const { data: authData, error: authError } = await supabase.auth.getUser();
@@ -116,7 +136,9 @@ export function TripLogForm({
 
     const updatedData = {
       ...data,
-      actual_departure_time: data.scheduled_departure_time,
+      scheduled_departure_time: departureDate.toISOString(),
+      actual_departure_time: departureDate.toISOString(),
+      actual_arrival_time: arrivalDate.toISOString(),
       cargo_count: 0,
       notes: data.notes || null,
       created_by: ownerId

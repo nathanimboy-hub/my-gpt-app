@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase";
 import { getUserRole } from "@/lib/roles";
 import { TripLog, UserRole } from "@/lib/types";
 import { formatDate, formatTime24 } from "@/lib/date";
+import { formatFixed, formatLocaleNumber } from "@/lib/number";
 
 type DashboardTab = "employee" | "admin";
 const PAGE_SIZE = 50;
@@ -379,19 +380,19 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 <div className="rounded-xl border border-slate-200 p-4">
                   <p className="text-sm text-slate-500">Total Trips Logged</p>
-                  <p className="text-xl font-semibold text-slate-900">{summaryInsights.totalTrips.toLocaleString()}</p>
+                  <p className="text-xl font-semibold text-slate-900">{formatLocaleNumber(summaryInsights.totalTrips)}</p>
                 </div>
                 <div className="rounded-xl border border-slate-200 p-4">
                   <p className="text-sm text-slate-500">Total Passengers</p>
-                  <p className="text-xl font-semibold text-slate-900">{summaryInsights.totalPassengers.toLocaleString()}</p>
+                  <p className="text-xl font-semibold text-slate-900">{formatLocaleNumber(summaryInsights.totalPassengers)}</p>
                 </div>
                 <div className="rounded-xl border border-slate-200 p-4">
                   <p className="text-sm text-slate-500">Average Passengers per Trip</p>
-                  <p className="text-xl font-semibold text-slate-900">{summaryInsights.averagePassengersPerTrip.toFixed(2)}</p>
+                  <p className="text-xl font-semibold text-slate-900">{formatFixed(summaryInsights.averagePassengersPerTrip, 2)}</p>
                 </div>
                 <div className="rounded-xl border border-slate-200 p-4">
                   <p className="text-sm text-slate-500">Average Fuel Used per Trip</p>
-                  <p className="text-xl font-semibold text-slate-900">{summaryInsights.averageFuelUsedPerTrip.toFixed(2)} L</p>
+                  <p className="text-xl font-semibold text-slate-900">{formatFixed(summaryInsights.averageFuelUsedPerTrip, 2)} L</p>
                 </div>
                 <div className="rounded-xl border border-slate-200 p-4">
                   <p className="text-sm text-slate-500">Lowest Passenger Trip</p>
@@ -404,7 +405,7 @@ export default function DashboardPage() {
                   <p className="text-base font-semibold text-slate-900">
                     {`${formatTripTime(summaryInsights.highestFuelUsageTrip)} – ${
                       summaryInsights.highestFuelUsageTrip
-                        ? `${Number(summaryInsights.highestFuelUsageTrip.total_fuel_liters).toFixed(2)} L`
+                        ? `${formatFixed(summaryInsights.highestFuelUsageTrip.total_fuel_liters, 2)} L`
                         : "No data available"
                     }`}
                   </p>
@@ -420,12 +421,12 @@ export default function DashboardPage() {
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
               <KpiCard label="Total Trips" value={metrics.totalTrips.toString()} />
-              <KpiCard label="Total Passengers" value={metrics.totalPassengers.toLocaleString()} />
-              <KpiCard label="Total Ticket Sales" value={`₱${metrics.totalTicketSales.toLocaleString()}`} />
-              <KpiCard label="Total Fuel Used" value={`${metrics.totalFuelUsed.toFixed(2)} L`} />
-              <KpiCard label="Avg Fuel / Trip" value={`${metrics.averageFuelPerTrip.toFixed(2)} L`} />
-              <KpiCard label="Fuel / Passenger" value={`${metrics.fuelPerPassengerRatio.toFixed(3)} L`} />
-              <KpiCard label="Fuel / Vehicle" value={`${metrics.fuelPerVehicleRatio.toFixed(3)} L`} />
+              <KpiCard label="Total Passengers" value={formatLocaleNumber(metrics.totalPassengers)} />
+              <KpiCard label="Total Ticket Sales" value={`₱${formatLocaleNumber(metrics.totalTicketSales)}`} />
+              <KpiCard label="Total Fuel Used" value={`${formatFixed(metrics.totalFuelUsed, 2)} L`} />
+              <KpiCard label="Avg Fuel / Trip" value={`${formatFixed(metrics.averageFuelPerTrip, 2)} L`} />
+              <KpiCard label="Fuel / Passenger" value={`${formatFixed(metrics.fuelPerPassengerRatio, 3)} L`} />
+              <KpiCard label="Fuel / Vehicle" value={`${formatFixed(metrics.fuelPerVehicleRatio, 3)} L`} />
             </div>
           </section>
 
@@ -435,30 +436,30 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
               <div className="rounded-xl border border-slate-200 p-4">
                 <p className="text-sm text-slate-500">Total Revenue</p>
-                <p className="text-xl font-semibold text-slate-900">₱{analyticsSummary.totalRevenue.toLocaleString()}</p>
+                <p className="text-xl font-semibold text-slate-900">₱{formatLocaleNumber(analyticsSummary.totalRevenue)}</p>
               </div>
               <div className="rounded-xl border border-slate-200 p-4">
                 <p className="text-sm text-slate-500">Total Fuel Used</p>
-                <p className="text-xl font-semibold text-slate-900">{analyticsSummary.totalFuelUsed.toFixed(2)} L</p>
+                <p className="text-xl font-semibold text-slate-900">{formatFixed(analyticsSummary.totalFuelUsed, 2)} L</p>
               </div>
               <div className="rounded-xl border border-slate-200 p-4">
                 <p className="text-sm text-slate-500">Average Fuel per Trip</p>
-                <p className="text-xl font-semibold text-slate-900">{analyticsSummary.averageFuelPerTrip.toFixed(2)} L</p>
+                <p className="text-xl font-semibold text-slate-900">{formatFixed(analyticsSummary.averageFuelPerTrip, 2)} L</p>
               </div>
               <div className="rounded-xl border border-slate-200 p-4">
                 <p className="text-sm text-slate-500">Average Revenue per Trip</p>
-                <p className="text-xl font-semibold text-slate-900">₱{analyticsSummary.averageRevenuePerTrip.toLocaleString()}</p>
+                <p className="text-xl font-semibold text-slate-900">₱{formatLocaleNumber(analyticsSummary.averageRevenuePerTrip)}</p>
               </div>
               <div className="rounded-xl border border-slate-200 p-4">
                 <p className="text-sm text-slate-500">Fuel per Passenger</p>
-                <p className="text-xl font-semibold text-slate-900">{analyticsSummary.fuelPerPassenger.toFixed(3)} L</p>
+                <p className="text-xl font-semibold text-slate-900">{formatFixed(analyticsSummary.fuelPerPassenger, 3)} L</p>
               </div>
               <div className="rounded-xl border border-slate-200 p-4 md:col-span-2 xl:col-span-1">
                 <p className="text-sm text-slate-500">Highest Fuel Usage Trip</p>
                 <p className="font-medium text-slate-900">{formatTripLabel(analyticsSummary.highestFuelTrip)}</p>
                 <p className="text-sm text-slate-500">
                   {analyticsSummary.highestFuelTrip
-                    ? `${Number(analyticsSummary.highestFuelTrip.total_fuel_liters).toFixed(2)} L`
+                    ? `${formatFixed(analyticsSummary.highestFuelTrip.total_fuel_liters, 2)} L`
                     : "—"}
                 </p>
               </div>
@@ -467,7 +468,7 @@ export default function DashboardPage() {
                 <p className="font-medium text-slate-900">{formatTripLabel(analyticsSummary.lowestFuelTrip)}</p>
                 <p className="text-sm text-slate-500">
                   {analyticsSummary.lowestFuelTrip
-                    ? `${Number(analyticsSummary.lowestFuelTrip.total_fuel_liters).toFixed(2)} L`
+                    ? `${formatFixed(analyticsSummary.lowestFuelTrip.total_fuel_liters, 2)} L`
                     : "—"}
                 </p>
               </div>

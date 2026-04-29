@@ -1,5 +1,6 @@
 import { formatScheduledDeparture } from "@/lib/date";
 import { TripLog, UserRole } from "@/lib/types";
+import { formatFixed, formatLocaleNumber } from "@/lib/number";
 
 interface TripLogsTableProps {
   logs: TripLog[];
@@ -75,10 +76,10 @@ export function TripLogsTable({
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-800">{log.vessel_name}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-slate-700">{log.route_direction}</td>
-                    <td className="whitespace-nowrap px-4 py-3">{log.passenger_count.toLocaleString()}</td>
-                    {showFinancials && <td className="whitespace-nowrap px-4 py-3">₱{log.ticket_sales_php.toLocaleString()}</td>}
-                    <td className="whitespace-nowrap px-4 py-3">{log.total_fuel_liters.toFixed(2)}</td>
-                    <td className="whitespace-nowrap px-4 py-3">{log.trip_duration_minutes} min</td>
+                    <td className="whitespace-nowrap px-4 py-3">{formatLocaleNumber(log.passenger_count)}</td>
+                    {showFinancials && <td className="whitespace-nowrap px-4 py-3">₱{formatLocaleNumber(log.ticket_sales_php)}</td>}
+                    <td className="whitespace-nowrap px-4 py-3">{formatFixed(log.total_fuel_liters, 2)}</td>
+                    <td className="whitespace-nowrap px-4 py-3">{formatLocaleNumber(log.trip_duration_minutes)} min</td>
                     <td className="px-4 py-3">
                       {canManage ? (
                         <div className="flex justify-end gap-2">

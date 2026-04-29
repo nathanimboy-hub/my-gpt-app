@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/lib/supabase";
 import { TripLog } from "@/lib/types";
 import { TripLogFormValues, tripLogSchema } from "@/lib/validation";
+import { formatFixed } from "@/lib/number";
 
 interface TripLogFormProps {
   userId: string | null;
@@ -230,7 +231,7 @@ export function TripLogForm({
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
             <p className="text-xs uppercase tracking-wide text-blue-700">Total Fuel (auto)</p>
-            <p className="mt-1 text-2xl font-semibold text-blue-900">{totalFuelLiters.toFixed(2)} L</p>
+            <p className="mt-1 text-2xl font-semibold text-blue-900">{formatFixed(totalFuelLiters, 2)} L</p>
           </div>
           <div className="rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3">
             <p className="text-xs uppercase tracking-wide text-indigo-700">Trip Duration (auto)</p>

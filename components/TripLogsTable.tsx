@@ -36,7 +36,7 @@ export function TripLogsTable({
     const fuelValues = [log.fuel_steaming_liters, log.fuel_maneuvering_liters, log.generator_fuel_liters];
     const hasMissingFuel = fuelValues.some((value) => value === null || value === undefined || !Number.isFinite(Number(value)));
     if (hasMissingFuel) {
-      return "Missing";
+      return "N/A";
     }
 
     const computedTotalFuel = fuelValues.reduce((sum, value) => sum + Number(value), 0);

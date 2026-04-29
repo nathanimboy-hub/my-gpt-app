@@ -15,6 +15,7 @@ interface TripLogFormProps {
   showFinancialFields: boolean;
   canManageAllLogs: boolean;
   onSaved: () => Promise<void>;
+  onClearEditing: () => void;
 }
 
 const defaultFormValues: TripLogFormValues = {
@@ -38,7 +39,8 @@ export function TripLogForm({
   editingLog,
   showFinancialFields,
   canManageAllLogs,
-  onSaved
+  onSaved,
+  onClearEditing
 }: TripLogFormProps) {
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -168,6 +170,9 @@ export function TripLogForm({
       }
 
       await onSaved();
+      window.alert("Trip log saved successfully.");
+      reset(defaultFormValues);
+      onClearEditing();
       setSaving(false);
     } catch (error) {
       console.error("Unexpected error while saving trip log", error);
@@ -283,7 +288,7 @@ export function TripLogForm({
             disabled={saving}
             className="w-full bg-blue-600 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300 sm:w-auto"
           >
-            {saving ? "Saving..." : isEditing ? "Update Trip Log" : "Save Trip Log"}
+            {saving ? "Saving..." : isEditing ? "Update Trip Log" : "Create Trip Log"}
           </button>
         </div>
       </form>

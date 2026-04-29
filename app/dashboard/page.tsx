@@ -275,6 +275,10 @@ export default function DashboardPage() {
     setEditingLog(null);
   };
 
+  const handleRefresh = async () => {
+    await loadLogs(true);
+  };
+
   const handleDelete = async (log: TripLog) => {
     if (!userId) {
       return;
@@ -325,6 +329,17 @@ export default function DashboardPage() {
 
   return (
     <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 pb-10 lg:px-6">
+      <div className="flex justify-start">
+        <button
+          type="button"
+          onClick={() => void handleRefresh()}
+          disabled={logsLoading || loadingMore}
+          className="inline-flex items-center gap-2 border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <span aria-hidden="true">↻</span>
+          Refresh
+        </button>
+      </div>
       <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -601,6 +616,7 @@ export default function DashboardPage() {
               showFinancialFields={true}
               canManageAllLogs={isAdmin}
               onSaved={handleSaved}
+              onClearEditing={() => setEditingLog(null)}
             />
           </section>
 

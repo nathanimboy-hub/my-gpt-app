@@ -126,7 +126,7 @@ export function TripLogForm({
         ownerId = authData.user.id;
       }
 
-      const updatedData = {
+      const basePayload = {
         ...data,
         scheduled_departure_time: data.scheduled_departure_time,
         actual_departure_time: data.scheduled_departure_time,
@@ -134,21 +134,31 @@ export function TripLogForm({
         total_fuel_liters: totalFuelLiters,
         trip_duration_minutes: tripDurationMinutes,
         cargo_count: 0,
-        notes: data.notes || null,
-        created_by: ownerId
+        notes: data.notes || null
       };
 
-      let query;
-      if (editingLog) {
-        query = supabase.from("trip_logs").update(updatedData).eq("id", editingLog.id);
-        if (!canManageAllLogs) {
-          query = query.eq("created_by", ownerId);
-        }
-      } else {
-        query = supabase.from("trip_logs").insert(updatedData);
+      if (!canManageAllLogs && editingLog && editingLog.created_by !== ownerId) {
+        setSubmitError("You can only edit trip logs you created.");
+        setSaving(false);
+        return;
       }
 
-      const { error } = await query;
+      let error = null;
+      if (editingLog) {
+        const updatedData = basePayload;
+        const { error: updateError } = await supabase
+          .from("trip_logs")
+          .update(updatedData)
+          .eq("id", editingLog.id);
+        error = updateError;
+      } else {
+        const insertPayload = {
+          ...basePayload,
+          created_by: ownerId
+        };
+        const { error: insertError } = await supabase.from("trip_logs").insert(insertPayload);
+        error = insertError;
+      }
 
       if (error) {
         console.error("Failed to save trip log", error);

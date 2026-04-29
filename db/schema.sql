@@ -32,7 +32,11 @@ alter table public.trip_logs enable row level security;
 create policy "users can read own trip logs"
   on public.trip_logs
   for select
-  using (auth.uid() = created_by);
+  using (
+    auth.uid() = created_by
+    or (auth.jwt() ->> 'role') = 'admin'
+    or (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
+  );
 
 create policy "users can insert own trip logs"
   on public.trip_logs
